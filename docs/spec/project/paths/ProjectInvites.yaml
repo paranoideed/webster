@@ -1,0 +1,77 @@
+post:
+  tags:
+    - project invites
+  summary: Send a project invite
+  description: >
+    Sends an email invite to the specified address.
+    The recipient receives an email with a link valid for **24 hours**.
+    On acceptance, the user is added to the project as a **viewer**.
+
+    Constraints:
+    - Only the project **owner** can send invites.
+    - Cannot invite an email that is already a project member.
+    - Cannot send a second invite to the same email while a pending invite exists.
+
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: "project ID"
+
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../schemas/SendInvite.yaml'
+
+  responses:
+    '201':
+      description: Invite created and email sent.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/ProjectInvite.yaml'
+    '400':
+      description: Validation error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Forbidden. You are not the project owner.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '404':
+      description: Project not found.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '409':
+      description: Email is already a member, or a pending invite already exists.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

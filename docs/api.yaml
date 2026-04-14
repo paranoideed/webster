@@ -45,6 +45,32 @@ components:
     ProfilesCollection:
       $ref: './spec/profile/schemas/ProfilesCollection.yaml'
 
+    # project
+    CreateProject:
+      $ref: './spec/project/schemas/CreateProject.yaml'
+    UpdateProject:
+      $ref: './spec/project/schemas/UpdateProject.yaml'
+    Project:
+      $ref: './spec/project/schemas/Project.yaml'
+    ProjectData:
+      $ref: './spec/project/schemas/ProjectData.yaml'
+    ProjectsCollection:
+      $ref: './spec/project/schemas/ProjectsCollection.yaml'
+    ProjectMember:
+      $ref: './spec/project/schemas/ProjectMember.yaml'
+    ProjectMemberData:
+      $ref: './spec/project/schemas/ProjectMemberData.yaml'
+    ProjectMembersCollection:
+      $ref: './spec/project/schemas/ProjectMembersCollection.yaml'
+    UpdateMember:
+      $ref: './spec/project/schemas/UpdateMember.yaml'
+    ProjectInvite:
+      $ref: './spec/project/schemas/ProjectInvite.yaml'
+    ProjectInviteData:
+      $ref: './spec/project/schemas/ProjectInviteData.yaml'
+    SendInvite:
+      $ref: './spec/project/schemas/SendInvite.yaml'
+
 paths:
   # auth
   /webster/v1/accounts/registration:
@@ -77,3 +103,17 @@ paths:
     $ref: './spec/profile/paths/ProfileById.yaml'
   /webster/v1/profiles/@{username}:
     $ref: './spec/profile/paths/ProfileByUsername.yaml'
+
+  # projects
+  /webster/v1/projects:
+    $ref: './spec/project/paths/Projects.yaml'
+  /webster/v1/projects/invites/{token}/accept:
+    $ref: './spec/project/paths/AcceptInvite.yaml'
+  /webster/v1/projects/{id}:
+    $ref: './spec/project/paths/ProjectById.yaml'
+  /webster/v1/projects/{id}/members:
+    $ref: './spec/project/paths/ProjectMembers.yaml'
+  /webster/v1/members/{memberId}:
+    $ref: './spec/project/paths/ProjectMemberById.yaml'
+  /webster/v1/projects/{id}/invites:
+    $ref: './spec/project/paths/ProjectInvites.yaml'

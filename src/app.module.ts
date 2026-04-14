@@ -4,6 +4,7 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { AuthModule } from "./modules/auth/auth.module";
 import { ProfileModule } from "./modules/profile/profile.module";
+import { ProjectModule } from "./modules/project/project.module";
 import { database } from "src/db/data-source";
 
 @Module({
@@ -11,6 +12,7 @@ import { database } from "src/db/data-source";
 		ConfigModule.forRoot({ isGlobal: true, envFilePath: [".env"] }),
 		AuthModule,
 		ProfileModule,
+		ProjectModule,
 	],
 	controllers: [AppController],
 	providers: [AppService]

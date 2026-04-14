@@ -251,6 +251,52 @@ export class MailService {
 		}
 	}
 
+	async sendProjectInvite(
+		inviterName: string,
+		projectName: string,
+		inviteeEmail: string,
+		token: string,
+	): Promise<void> {
+		const inviteUrl = `${this.config.get("FRONTEND_URL") ?? "#"}/projects/invite/${token}`;
+		const html = this.wrap(
+			`You've been invited to ${projectName}`,
+			`
+			<div style="text-align:center; padding: 8px 0 24px;">
+				<div style="font-size:52px; margin-bottom:8px;">📨</div>
+				<h1 style="margin:0 0 8px; color:#1e1b4b; font-size:24px;">You're invited!</h1>
+				<p style="color:#6b7280; margin:0; font-size:15px;">
+					<strong>${this.esc(inviterName)}</strong> has invited you to join the project
+					<strong>${this.esc(projectName)}</strong> on webster.
+				</p>
+			</div>
+			<div style="background:#f5f3ff; border-radius:12px; padding:20px 24px; margin-bottom:24px;">
+				<p style="margin:0; color:#4f46e5; font-size:14px; font-weight:600;">📋 Project</p>
+				<p style="margin:8px 0 0; color:#374151; font-size:15px; font-weight:700;">${this.esc(projectName)}</p>
+			</div>
+			<div style="text-align:center; margin-bottom:24px;">
+				<a href="${inviteUrl}" style="display:inline-block; background:#4f46e5; color:#fff; text-decoration:none; padding:14px 36px; border-radius:8px; font-size:15px; font-weight:600;">Accept Invitation →</a>
+			</div>
+			<div style="background:#fefce8; border:1px solid #fde68a; border-radius:12px; padding:14px 20px; text-align:center;">
+				<p style="margin:0; color:#92400e; font-size:13px;">⏱ This invitation expires in <strong>24 hours</strong>.</p>
+			</div>
+			<div style="margin-top:20px; background:#f9fafb; border-radius:12px; padding:14px 20px;">
+				<p style="margin:0; color:#6b7280; font-size:13px;">If you didn't expect this invitation, you can safely ignore this email.</p>
+			</div>
+			`
+		);
+
+		try {
+			await this.transporter.sendMail({
+				from: this.from,
+				to: inviteeEmail,
+				subject: `${inviterName} invited you to "${projectName}" on webster`,
+				html,
+			});
+		} catch (err) {
+			this.log.error("MAIL", "sendProjectInvite", 500, err.message, err.stack);
+		}
+	}
+
 	private wrap(title: string, content: string): string {
 		return `
 		<!DOCTYPE html>

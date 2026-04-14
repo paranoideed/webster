@@ -1,0 +1,102 @@
+get:
+  tags:
+    - projects
+  summary: List my projects
+  description: >
+    Returns a paginated list of projects where the authenticated user is a member (any role).
+    Supports pagination via `page[number]` / `page[size]` and sorting via `sort`.
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  parameters:
+    - name: page[limit]
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of projects per page.
+    - name: page[offset]
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Number of projects to skip.
+    - name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - newest
+          - oldest
+        default: newest
+      description: Sort order by creation date.
+
+  responses:
+    '200':
+      description: List of projects.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/ProjectsCollection.yaml'
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+post:
+  tags:
+    - projects
+  summary: Create a project
+  description: >
+    Creates a new project. The authenticated user is automatically added as the **owner**.
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../schemas/CreateProject.yaml'
+
+  responses:
+    '201':
+      description: Project created.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/Project.yaml'
+    '400':
+      description: Validation error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

@@ -1,0 +1,42 @@
+type: object
+required:
+  - id
+  - type
+  - attributes
+properties:
+  id:
+    type: string
+    format: uuid
+    description: "invite record ID"
+  type:
+    type: string
+    enum: [ project_invite ]
+  attributes:
+    type: object
+    required:
+      - project_id
+      - email
+      - invited_by
+      - expires_at
+      - created_at
+    properties:
+      project_id:
+        type: string
+        format: uuid
+        description: "project this invite belongs to"
+      email:
+        type: string
+        format: email
+        description: "email address the invite was sent to"
+      invited_by:
+        type: string
+        format: uuid
+        description: "account ID of the user who sent the invite"
+      expires_at:
+        type: string
+        format: date-time
+        description: "when the invite expires (24 hours after creation)"
+      created_at:
+        type: string
+        format: date-time
+        description: "creation timestamp"

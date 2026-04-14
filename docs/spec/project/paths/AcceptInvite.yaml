@@ -1,0 +1,62 @@
+post:
+  tags:
+    - project invites
+  summary: Accept a project invite
+  description: >
+    Accepts a project invite by token.
+    The authenticated user is added to the project as a **viewer** and the invite is deleted.
+
+    Constraints:
+    - The token must exist and must not be expired (TTL: 24 hours).
+    - The authenticated user's email must match the email the invite was sent to.
+    - If the user is already a member, the invite is cleaned up and a 409 is returned.
+
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  parameters:
+    - name: token
+      in: path
+      required: true
+      schema:
+        type: string
+      description: "invite token from the email link"
+
+  responses:
+    '201':
+      description: Invite accepted. User added as viewer.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/ProjectMember.yaml'
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Forbidden. The authenticated user's email does not match the invite.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '404':
+      description: Invite not found or has expired.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '409':
+      description: You are already a member of this project.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

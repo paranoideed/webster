@@ -33,11 +33,17 @@ export class AuthService {
 	) {}
 
 	public async deleteAccount(accountId: string) {
-		const account = await Account.findOneBy({ id: accountId });
+		const [account, profile] = await Promise.all([
+			Account.findOneBy({ id: accountId }),
+			Profile.findOneBy({ accountId }),
+		]);
 		if (!account) {
 			throw new ForbiddenException("Account not found");
 		}
-		await account.softRemove();
+		await database.dataSource.transaction(async (manager) => {
+			if (profile) await manager.softRemove(Profile, profile);
+			await manager.softRemove(Account, account);
+		});
 	}
 
 	public async register(dto: RegisterAttributes) {
@@ -192,20 +198,14 @@ export class AuthService {
 			}
 		});
 		if (!verification) {
+			void this.mail.emailVerificationFailed(accountId);
 			throw new BadRequestException("Invalid or expired verification code");
 		}
 
 		account.verified = true;
 		await account.save();
 		await verification.remove();
-	}
-
-	public async deleteMe(accountId: string): Promise<void> {
-		const account = await Account.findOneBy({ id: accountId });
-		if (!account) {
-			throw new UnauthorizedException("Account not found");
-		}
-		await account.softRemove();
+		void this.mail.emailVerificationSuccess(accountId);
 	}
 
 	private async validateUser(dto: LoginDto) {

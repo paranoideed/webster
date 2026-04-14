@@ -1,0 +1,32 @@
+type: object
+required:
+  - id
+  - type
+  - attributes
+properties:
+  id:
+    type: string
+    format: uuid
+    description: "project ID"
+  type:
+    type: string
+    enum: [ project ]
+  attributes:
+    type: object
+    required:
+      - name
+      - created_at
+      - updated_at
+    properties:
+      name:
+        type: string
+        description: "project name (1–255 chars)"
+        example: "My Design Project"
+      created_at:
+        type: string
+        format: date-time
+        description: "creation timestamp"
+      updated_at:
+        type: string
+        format: date-time
+        description: "last update timestamp"

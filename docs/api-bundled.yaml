@@ -207,9 +207,39 @@ paths:
     post:
       tags:
         - auth
-      summary: Verify email address
+      summary: Request email verification code
       description: |
-        Confirms a user's email address using a verification token sent to their inbox. Not yet implemented — placeholder for future use.
+        Sends a 6-digit verification code to the authenticated user's email address. The code is valid for 5 minutes.
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: Verification code sent successfully.
+        '400':
+          description: Email is already verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/accounts/me/verify-email/confirm:
+    post:
+      tags:
+        - auth
+      summary: Confirm email verification
+      description: |
+        Confirms the user's email address using the 6-digit code sent to their inbox. The code expires after 5 minutes.
       security:
         - cookieAuth: []
       requestBody:
@@ -219,17 +249,32 @@ paths:
             schema:
               type: object
               required:
-                - token
+                - data
               properties:
-                token:
-                  type: string
-                  description: Verification token received by email.
-                  example: a1b2c3d4e5f6...
+                data:
+                  type: object
+                  required:
+                    - type
+                    - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - account
+                    attributes:
+                      type: object
+                      required:
+                        - code
+                      properties:
+                        code:
+                          type: string
+                          description: 6-digit verification code received by email.
+                          example: '483920'
       responses:
         '204':
           description: Email successfully verified.
         '400':
-          description: Invalid or expired token.
+          description: Invalid or expired code, or email already verified.
           content:
             application/json:
               schema:
@@ -513,6 +558,572 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Errors'
+  /webster/v1/projects:
+    get:
+      tags:
+        - projects
+      summary: List my projects
+      description: |
+        Returns a paginated list of projects where the authenticated user is a member (any role). Supports pagination via `page[number]` / `page[size]` and sorting via `sort`. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: page[limit]
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of projects per page.
+        - name: page[offset]
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of projects to skip.
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - newest
+              - oldest
+            default: newest
+          description: Sort order by creation date.
+      responses:
+        '200':
+          description: List of projects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectsCollection'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    post:
+      tags:
+        - projects
+      summary: Create a project
+      description: |
+        Creates a new project. The authenticated user is automatically added as the **owner**. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProject'
+      responses:
+        '201':
+          description: Project created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/projects/invites/{token}/accept:
+    post:
+      tags:
+        - project invites
+      summary: Accept a project invite
+      description: |
+        Accepts a project invite by token. The authenticated user is added to the project as a **viewer** and the invite is deleted.
+        Constraints: - The token must exist and must not be expired (TTL: 24 hours). - The authenticated user's email must match the email the invite was sent to. - If the user is already a member, the invite is cleaned up and a 409 is returned.
+        Requires a valid access token.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: invite token from the email link
+      responses:
+        '201':
+          description: Invite accepted. User added as viewer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMember'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Forbidden. The authenticated user's email does not match the invite.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Invite not found or has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '409':
+          description: You are already a member of this project.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/projects/{id}:
+    get:
+      tags:
+        - projects
+      summary: Get a project
+      description: |
+        Returns a single project by ID. The authenticated user must be a member of the project. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: project ID
+      responses:
+        '200':
+          description: Project found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Forbidden. You are not a member of this project.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Project not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    patch:
+      tags:
+        - projects
+      summary: Update a project
+      description: |
+        Updates the project name. Requires the authenticated user to be an **owner** or **editor** of the project. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: project ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProject'
+      responses:
+        '200':
+          description: Project updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Forbidden. You are not a member, or your role is viewer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Project not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    delete:
+      tags:
+        - projects
+      summary: Delete a project
+      description: |
+        Permanently deletes a project and all its members and invites (cascade). Only the project **owner** can perform this action. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: project ID
+      responses:
+        '204':
+          description: Project deleted.
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Forbidden. You are not the owner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Project not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/projects/{id}/members:
+    get:
+      tags:
+        - project members
+      summary: List project members
+      description: |
+        Returns all members of a project. The authenticated user must be a member of the project (any role). Requires a valid access token.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: project ID
+      responses:
+        '200':
+          description: List of members.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMembersCollection'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Forbidden. You are not a member of this project.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/members/{memberId}:
+    get:
+      tags:
+        - project members
+      summary: Get a member
+      description: |
+        Returns a single project member by ID. The authenticated user must be a member of the same project (any role). Requires a valid access token.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: project member record ID
+      responses:
+        '200':
+          description: Member found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMember'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Forbidden. You are not a member of this project.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Member not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    patch:
+      tags:
+        - project members
+      summary: Update member role
+      description: |
+        Changes the role of a project member. Only the project **owner** can perform this action. The owner's own role cannot be changed. The `owner` role cannot be assigned via this endpoint. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: project member record ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMember'
+      responses:
+        '200':
+          description: Member role updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMember'
+        '400':
+          description: Validation error, or attempt to assign/change owner role.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Forbidden. You are not the project owner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Member not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    delete:
+      tags:
+        - project members
+      summary: Remove a member
+      description: |
+        Removes a member from the project. The project **owner** can remove any non-owner member. Any member can remove **themselves** (leave the project), as long as they are not the owner. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: project member record ID
+      responses:
+        '204':
+          description: Member removed.
+        '400':
+          description: Cannot remove the project owner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Forbidden. You can only remove yourself or, as an owner, other non-owner members.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Member not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/projects/{id}/invites:
+    post:
+      tags:
+        - project invites
+      summary: Send a project invite
+      description: |
+        Sends an email invite to the specified address. The recipient receives an email with a link valid for **24 hours**. On acceptance, the user is added to the project as a **viewer**.
+        Constraints: - Only the project **owner** can send invites. - Cannot invite an email that is already a project member. - Cannot send a second invite to the same email while a pending invite exists.
+        Requires a valid access token.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: project ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendInvite'
+      responses:
+        '201':
+          description: Invite created and email sent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectInvite'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Forbidden. You are not the project owner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Project not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '409':
+          description: Email is already a member, or a pending invite already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
 components:
   securitySchemes:
     cookieAuth:
@@ -753,7 +1364,6 @@ components:
           type: object
           required:
             - username
-            - visibility
             - updated_at
             - created_at
           properties:
@@ -761,10 +1371,6 @@ components:
               type: string
               description: username (3–32 chars, letters/numbers/-._!)
               example: john_doe
-            visibility:
-              type: boolean
-              description: whether the profile is publicly visible
-              example: true
             avatar_url:
               type: string
               nullable: true
@@ -790,6 +1396,285 @@ components:
             $ref: '#/components/schemas/ProfileData'
         links:
           $ref: '#/components/schemas/PaginationData'
+    CreateProject:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - attributes
+          properties:
+            type:
+              type: string
+              enum:
+                - project
+            attributes:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  example: My Design Project
+    UpdateProject:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - id
+            - type
+            - attributes
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: project ID
+            type:
+              type: string
+              enum:
+                - project
+            attributes:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  example: Renamed Project
+    Project:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/ProjectData'
+    ProjectData:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: project ID
+        type:
+          type: string
+          enum:
+            - project
+        attributes:
+          type: object
+          required:
+            - name
+            - created_at
+            - updated_at
+          properties:
+            name:
+              type: string
+              description: project name (1–255 chars)
+              example: My Design Project
+            created_at:
+              type: string
+              format: date-time
+              description: creation timestamp
+            updated_at:
+              type: string
+              format: date-time
+              description: last update timestamp
+    ProjectsCollection:
+      type: object
+      required:
+        - data
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectData'
+        links:
+          $ref: '#/components/schemas/PaginationData'
+    ProjectMember:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/ProjectMemberData'
+    ProjectMemberData:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: project member record ID
+        type:
+          type: string
+          enum:
+            - project_member
+        attributes:
+          type: object
+          required:
+            - account_id
+            - project_id
+            - role
+            - created_at
+            - updated_at
+          properties:
+            account_id:
+              type: string
+              format: uuid
+              description: account ID of the member
+            project_id:
+              type: string
+              format: uuid
+              description: project ID
+            role:
+              type: string
+              enum:
+                - owner
+                - editor
+                - viewer
+              description: member's role in the project
+              example: viewer
+            created_at:
+              type: string
+              format: date-time
+              description: when the member joined
+            updated_at:
+              type: string
+              format: date-time
+              description: last role update timestamp
+    ProjectMembersCollection:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectMemberData'
+    UpdateMember:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - id
+            - type
+            - attributes
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: project member record ID
+            type:
+              type: string
+              enum:
+                - project_member
+            attributes:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  type: string
+                  enum:
+                    - editor
+                    - viewer
+                  description: new role (cannot assign owner)
+                  example: editor
+    ProjectInvite:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/ProjectInviteData'
+    ProjectInviteData:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: invite record ID
+        type:
+          type: string
+          enum:
+            - project_invite
+        attributes:
+          type: object
+          required:
+            - project_id
+            - email
+            - invited_by
+            - expires_at
+            - created_at
+          properties:
+            project_id:
+              type: string
+              format: uuid
+              description: project this invite belongs to
+            email:
+              type: string
+              format: email
+              description: email address the invite was sent to
+            invited_by:
+              type: string
+              format: uuid
+              description: account ID of the user who sent the invite
+            expires_at:
+              type: string
+              format: date-time
+              description: when the invite expires (24 hours after creation)
+            created_at:
+              type: string
+              format: date-time
+              description: creation timestamp
+    SendInvite:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - attributes
+          properties:
+            type:
+              type: string
+              enum:
+                - project_invite
+            attributes:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: colleague@example.com
     PaginationData:
       type: object
       required:

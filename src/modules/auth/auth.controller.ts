@@ -44,8 +44,6 @@ export class AuthController {
 	@Post("login")
 	@HttpCode(HttpStatus.OK)
 	async login(@Body() dto: LoginDto, @Res() res: Response) {
-		//so honestly dosent metter does user already have tokens or not
-		//and btw vpadly while testing use /logout /login and do again and again so I decided clean cookies here
 		res.clearCookie("access");
 		res.clearCookie("refresh");
 

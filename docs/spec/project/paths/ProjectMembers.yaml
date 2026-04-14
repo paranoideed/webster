@@ -1,0 +1,45 @@
+get:
+  tags:
+    - project members
+  summary: List project members
+  description: >
+    Returns all members of a project.
+    The authenticated user must be a member of the project (any role).
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: "project ID"
+
+  responses:
+    '200':
+      description: List of members.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/ProjectMembersCollection.yaml'
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Forbidden. You are not a member of this project.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

@@ -1,0 +1,28 @@
+type: object
+required:
+  - data
+properties:
+  data:
+    type: object
+    required:
+      - id
+      - type
+      - attributes
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: "project member record ID"
+      type:
+        type: string
+        enum: [ project_member ]
+      attributes:
+        type: object
+        required:
+          - role
+        properties:
+          role:
+            type: string
+            enum: [ editor, viewer ]
+            description: "new role (cannot assign owner)"
+            example: "editor"

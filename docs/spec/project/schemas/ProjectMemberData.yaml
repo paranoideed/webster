@@ -1,0 +1,43 @@
+type: object
+required:
+  - id
+  - type
+  - attributes
+properties:
+  id:
+    type: string
+    format: uuid
+    description: "project member record ID"
+  type:
+    type: string
+    enum: [ project_member ]
+  attributes:
+    type: object
+    required:
+      - account_id
+      - project_id
+      - role
+      - created_at
+      - updated_at
+    properties:
+      account_id:
+        type: string
+        format: uuid
+        description: "account ID of the member"
+      project_id:
+        type: string
+        format: uuid
+        description: "project ID"
+      role:
+        type: string
+        enum: [ owner, editor, viewer ]
+        description: "member's role in the project"
+        example: "viewer"
+      created_at:
+        type: string
+        format: date-time
+        description: "when the member joined"
+      updated_at:
+        type: string
+        format: date-time
+        description: "last role update timestamp"

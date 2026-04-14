@@ -1,0 +1,28 @@
+type: object
+required:
+  - data
+properties:
+  data:
+    type: object
+    required:
+      - id
+      - type
+      - attributes
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: "project ID"
+      type:
+        type: string
+        enum: [ project ]
+      attributes:
+        type: object
+        required:
+          - name
+        properties:
+          name:
+            type: string
+            minLength: 1
+            maxLength: 255
+            example: "Renamed Project"

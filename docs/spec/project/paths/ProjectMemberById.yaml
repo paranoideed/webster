@@ -1,0 +1,172 @@
+get:
+  tags:
+    - project members
+  summary: Get a member
+  description: >
+    Returns a single project member by ID.
+    The authenticated user must be a member of the same project (any role).
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  parameters:
+    - name: memberId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: "project member record ID"
+
+  responses:
+    '200':
+      description: Member found.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/ProjectMember.yaml'
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Forbidden. You are not a member of this project.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '404':
+      description: Member not found.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+patch:
+  tags:
+    - project members
+  summary: Update member role
+  description: >
+    Changes the role of a project member.
+    Only the project **owner** can perform this action.
+    The owner's own role cannot be changed. The `owner` role cannot be assigned via this endpoint.
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  parameters:
+    - name: memberId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: "project member record ID"
+
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../schemas/UpdateMember.yaml'
+
+  responses:
+    '200':
+      description: Member role updated.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/ProjectMember.yaml'
+    '400':
+      description: Validation error, or attempt to assign/change owner role.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Forbidden. You are not the project owner.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '404':
+      description: Member not found.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+delete:
+  tags:
+    - project members
+  summary: Remove a member
+  description: >
+    Removes a member from the project.
+    The project **owner** can remove any non-owner member.
+    Any member can remove **themselves** (leave the project), as long as they are not the owner.
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  parameters:
+    - name: memberId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: "project member record ID"
+
+  responses:
+    '204':
+      description: Member removed.
+    '400':
+      description: Cannot remove the project owner.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Forbidden. You can only remove yourself or, as an owner, other non-owner members.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '404':
+      description: Member not found.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
