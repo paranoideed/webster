@@ -1,0 +1,37 @@
+post:
+  tags:
+    - auth
+  summary: Login with email and password
+  description: >
+    Authenticates a user using their email and password.
+    On success, sets `access` and `refresh` cookies and returns the account object.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../schemas/LoginByEmail.yaml'
+
+  responses:
+    '200':
+      description: >
+        Successful login. `access` cookie (JWT access token) and
+        `refresh` httpOnly cookie (JWT refresh token) are set.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/Account.yaml'
+
+    '400':
+      description: Invalid email or password.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

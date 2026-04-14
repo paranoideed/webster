@@ -1,0 +1,79 @@
+openapi: 3.1.0
+info:
+  title: Webster API
+  description: API documentation for Webster backend
+  version: 0.1.0
+
+servers:
+  - url: http://localhost:3000
+
+security: []
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access
+    refreshCookieAuth:
+      type: apiKey
+      in: cookie
+      name: refresh
+
+  schemas:
+    # shared
+    Errors:
+      $ref: './spec/shared/Errors.yaml'
+    PaginationLinks:
+      $ref: './spec/shared/PaginationData.yaml'
+
+    # auth
+    LoginByEmail:
+      $ref: './spec/auth/schemas/LoginByEmail.yaml'
+    Registration:
+      $ref: './spec/auth/schemas/Registration.yaml'
+    Account:
+      $ref: './spec/auth/schemas/Account.yaml'
+
+    # profile
+    UpdateProfile:
+      $ref: './spec/profile/schemas/UpdateProfile.yaml'
+    Profile:
+      $ref: './spec/profile/schemas/Profile.yaml'
+    ProfileData:
+      $ref: './spec/profile/schemas/ProfileData.yaml'
+    ProfilesCollection:
+      $ref: './spec/profile/schemas/ProfilesCollection.yaml'
+
+paths:
+  # auth
+  /webster/v1/accounts/registration:
+    $ref: './spec/auth/paths/Registration.yaml'
+  /webster/v1/accounts/login:
+    $ref: './spec/auth/paths/LoginByEmail.yaml'
+  /webster/v1/accounts/login/google:
+    $ref: './spec/auth/paths/LoginByGoogle.yaml'
+  /webster/v1/accounts/login/google/callback:
+    $ref: './spec/auth/paths/LoginByGoogleCallback.yaml'
+  /webster/v1/accounts/logout:
+    $ref: './spec/auth/paths/Logout.yaml'
+  /webster/v1/accounts/refresh:
+    $ref: './spec/auth/paths/Refresh.yaml'
+  /webster/v1/accounts:
+    $ref: './spec/auth/paths/MyAccount.yaml'
+  /webster/v1/accounts/me/verify-email:
+    $ref: './spec/auth/paths/VerifyEmail.yaml'
+  /webster/v1/accounts/me/verify-email/confirm:
+    $ref: './spec/auth/paths/VerifyEmailConfirm.yaml'
+
+  # profiles
+  /webster/v1/profiles:
+    $ref: './spec/profile/paths/FilterProfiles.yaml'
+  /webster/v1/profiles/me:
+    $ref: './spec/profile/paths/MyProfile.yaml'
+  /webster/v1/profiles/me/avatar:
+    $ref: './spec/profile/paths/MyProfileAvatar.yaml'
+  /webster/v1/profiles/{account_id}:
+    $ref: './spec/profile/paths/ProfileById.yaml'
+  /webster/v1/profiles/@{username}:
+    $ref: './spec/profile/paths/ProfileByUsername.yaml'

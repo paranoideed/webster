@@ -1,0 +1,11 @@
+type: object
+required:
+  - data
+  - links
+properties:
+  data:
+    type: array
+    items:
+      $ref: './ProfileData.yaml'
+  links:
+    $ref: '../../shared/PaginationData.yaml'

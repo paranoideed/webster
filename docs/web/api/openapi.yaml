@@ -1,0 +1,1338 @@
+openapi: 3.1.1
+info:
+  description: API documentation for user-svc
+  title: netbill user-svc API
+  version: 0.1.0
+servers:
+- url: http://localhost:8001
+paths:
+  /auth-svc/v1/registration/:
+    post:
+      description: Endpoint to register a new user account.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/schemas/Registration"
+        required: true
+      responses:
+        "201":
+          description: Account successfully registered
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Conflict: An account with this email or phone number already exists. Check the 'detail' field in the response for more information.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal server error
+      summary: Register a new account
+      tags:
+      - registration
+  /auth-svc/v1/registration/admin:
+    post:
+      description: |
+        Registers a new account by an authenticated admin.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/schemas/RegistrationAdmin"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Account"
+          description: Account successfully registered by admin
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Bad Request. Request body is invalid or some attributes do not meet requirements. Check the `errors` array for details.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Unauthorized. Account cannot be resolved from context or initiator account not found. Check the `detail` field in the response for more information.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Forbidden. Initiator account is not active or does not have enough rights. Check the `detail` field in the response for more information.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Conflict. Email is already taken. Check the `detail` field in the response for more information.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Register a new admin account
+      tags:
+      - registration
+  /auth-svc/v1/login/email:
+    post:
+      description: |
+        Endpoint to login a user using their email and password.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/schemas/LoginByEmail"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/TokensPair"
+          description: Successful login
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Unauthorized: Invalid email or password.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal server error
+      summary: Login by email
+      tags:
+      - login
+  /auth-svc/v1/login/username:
+    post:
+      description: Endpoint to login a user using their username and password.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/schemas/LoginByUsername"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/TokensPair"
+          description: Successful login
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Unauthorized: Invalid username or password. Check the 'detail' field in the response for more information.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal server error
+      summary: Login by username
+      tags:
+      - login
+  /auth-svc/v1/login/google:
+    post:
+      description: |
+        Redirects the user-agent to Google OAuth consent screen. This endpoint returns a redirect and does not return a JSON:API document.
+      responses:
+        "307":
+          description: Temporary Redirect to Google OAuth consent screen
+          headers:
+            Location:
+              description: Google OAuth authorization URL
+              explode: false
+              schema:
+                format: uri
+                type: string
+              style: simple
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      summary: Start Google OAuth login
+      tags:
+      - login
+  /auth-svc/v1/login/google/callback:
+    get:
+      description: |
+        Exchanges Google OAuth `code` for user info and returns an access/refresh tokens pair.
+      parameters:
+      - description: OAuth authorization code returned by Google
+        explode: true
+        in: query
+        name: code
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/TokensPair"
+          description: Tokens pair issued
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Missing or invalid query parameter `code`
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Account not found for this email
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      summary: Google OAuth callback
+      tags:
+      - login
+  /auth-svc/v1/refresh:
+    post:
+      description: |
+        Issues a new access/refresh tokens pair using a valid refresh token.
+        **401 Unauthorized** is returned when the account or session does not exist. **403 Forbidden** is returned when the account is inactive or the refresh token does not match the session.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/schemas/RefreshSession"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/TokensPair"
+          description: Tokens pair successfully refreshed
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Bad Request. Request body is invalid. Check the `errors` array for details.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Unauthorized. Account not found or session not found or invalid refresh token.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      summary: Refresh session
+      tags:
+      - sessions
+  /auth-svc/v1/me:
+    delete:
+      description: |
+        Deletes the authenticated account.
+      responses:
+        "204":
+          description: Account successfully deleted
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Unauthorized. Invalid credentials, initiator account not found, or session is invalid. Check the `detail` field in the response for more information.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Account is have membership in an organization,  must leave all organizations before deleting the account.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Delete my account
+      tags:
+      - accounts
+    get:
+      description: |
+        Returns the authenticated account.
+      parameters:
+      - description: |
+          Optional related resources to include. Supported values: `email`.
+        explode: false
+        in: query
+        name: include
+        required: false
+        schema:
+          items:
+            enum:
+            - email
+            type: string
+          type: array
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Account"
+          description: Account successfully retrieved
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Unauthorized. Invalid credentials or account cannot be resolved from context. Check the `detail` field in the response for more information.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Get my account
+      tags:
+      - accounts
+  /auth-svc/v1/me/logout:
+    post:
+      description: |
+        Invalidates the current session of the authenticated account.
+      responses:
+        "204":
+          description: Successfully logged out
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Unauthorized. Account cannot be resolved from context. Check the `detail` field in the response for more information.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Logout
+      tags:
+      - sessions
+  /auth-svc/v1/me/password:
+    patch:
+      description: |
+        Updates the password of the authenticated account.
+        **401 Unauthorized** is returned when credentials are invalid, the session is invalid, or the old password is incorrect. **403 Forbidden** is returned when the initiator is blocked or password change is temporarily restricted.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/schemas/UpdatePassword"
+        required: true
+      responses:
+        "204":
+          description: Password successfully updated
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Bad Request. Request body is invalid or the new password does not meet requirements. Check the `errors` array for details.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Unauthorized. Invalid credentials, invalid session, user not found, or invalid password.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Forbidden. Cannot change password yet due, password change timeout.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Update password
+      tags:
+      - accounts
+  /auth-svc/v1/me/username:
+    patch:
+      description: |
+        Updates the username of the authenticated account.
+        **401 Unauthorized** is returned when credentials are invalid, the session is invalid, or the password is incorrect. **403 Forbidden** is returned when the initiator is blocked or username change is temporarily restricted. **409 Conflict** is returned when the requested username is already taken.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/schemas/UpdateUsername"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Account"
+          description: Username successfully updated
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Bad Request. Request body is invalid or the new username does not meet requirements. Check the `errors` array for details.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Unauthorized. Invalid credentials, invalid session, user not found, or invalid password.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Conflict. The requested username is already taken. Check the `detail` field in the response for more information.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Update username
+      tags:
+      - accounts
+  /auth-svc/v1/me/sessions:
+    delete:
+      description: |
+        Deletes all sessions of the authenticated account (logout from all devices).
+      responses:
+        "204":
+          description: Sessions successfully deleted
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Unauthorized. Invalid credentials, initiator account not found, or session is invalid.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Delete my sessions
+      tags:
+      - sessions
+    get:
+      description: |
+        Returns sessions of the authenticated account.
+        Supports pagination via query parameters.
+      parameters:
+      - description: Max number of items to return
+        explode: true
+        in: query
+        name: "page[limit]"
+        required: false
+        schema:
+          minimum: 1
+          type: integer
+        style: form
+      - description: Number of items to skip
+        explode: true
+        in: query
+        name: "page[offset]"
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/AccountSessionsCollection"
+          description: Sessions successfully retrieved
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: |
+            Unauthorized. Invalid credentials, initiator account not found, or session is invalid.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Get my sessions
+      tags:
+      - sessions
+  /auth-svc/v1/me/sessions/{session_id}:
+    delete:
+      description: |
+        Delete session by ID
+      parameters:
+      - description: Session ID
+        explode: false
+        in: path
+        name: session_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: Session successfully deleted
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: "Unauthorized, session not exist or session does not belong\
+            \ to the authenticated account"
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Delete my sessions
+      tags:
+      - sessions
+    get:
+      description: |
+        Returns sessions of the authenticated account.
+      parameters:
+      - description: Session ID
+        explode: false
+        in: path
+        name: session_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/AccountSessionsCollection"
+          description: Sessions successfully retrieved
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Unauthorized
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/schemas/Errors"
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Get my sessions
+      tags:
+      - sessions
+    parameters:
+    - description: Session ID
+      explode: false
+      in: path
+      name: session_id
+      required: true
+      schema:
+        format: uuid
+        type: string
+      style: simple
+components:
+  schemas:
+    LoginByEmail:
+      example:
+        data:
+          attributes:
+            password: StrongP@ssw0rd!
+            email: example@gmail.com
+          type: account_session
+      properties:
+        data:
+          $ref: "#/schemas/LoginByEmail_data"
+      required:
+      - data
+    LoginByUsername:
+      example:
+        data:
+          attributes:
+            password: StrongP@ssw0rd!
+            username: example
+          type: account_session
+      properties:
+        data:
+          $ref: "#/schemas/LoginByUsername_data"
+      required:
+      - data
+    Registration:
+      example:
+        data:
+          attributes:
+            password: StrongP@ssw0rd!
+            email: example@gmail.com
+            username: user123
+          type: account
+      properties:
+        data:
+          $ref: "#/schemas/Registration_data"
+      required:
+      - data
+    RegistrationAdmin:
+      example:
+        data:
+          attributes:
+            password: StrongP@ssw0rd!
+            role: admin
+            email: example1312@gmail.com
+            username: adminUser
+          type: account
+      properties:
+        data:
+          $ref: "#/schemas/RegistrationAdmin_data"
+      required:
+      - data
+    RefreshSession:
+      example:
+        data:
+          attributes:
+            refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          type: account_session
+      properties:
+        data:
+          $ref: "#/schemas/RefreshSession_data"
+      required:
+      - data
+    UpdatePassword:
+      example:
+        data:
+          attributes:
+            old_password: OldP@ssw0rd!
+            new_password: StrongP@ssw0rd!
+          type: account_password
+      properties:
+        data:
+          $ref: "#/schemas/UpdatePassword_data"
+      required:
+      - data
+    UpdateUsername:
+      example:
+        data:
+          attributes:
+            username: username
+          type: account_username
+      properties:
+        data:
+          $ref: "#/schemas/UpdateUsername_data"
+      required:
+      - data
+    TokensPair:
+      example:
+        data:
+          attributes:
+            access_token: access_token
+            refresh_token: refresh_token
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          type: tokens_pair
+      properties:
+        data:
+          $ref: "#/schemas/TokensPair_data"
+      required:
+      - data
+    AccessToken:
+      properties:
+        data:
+          $ref: "#/schemas/AccessToken_data"
+      required:
+      - data
+    AccountSession:
+      properties:
+        data:
+          $ref: "#/schemas/AccountSessionData"
+      required:
+      - data
+    AccountSessionData:
+      example:
+        attributes:
+          account_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          last_used: 2000-01-23T04:56:07.000+00:00
+          created_at: 2000-01-23T04:56:07.000+00:00
+          version: 0
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        type: account_session
+      properties:
+        id:
+          description: session id
+          format: uuid
+          type: string
+        type:
+          enum:
+          - account_session
+          type: string
+        attributes:
+          $ref: "#/schemas/AccountSessionAttributes"
+      required:
+      - attributes
+      - id
+      - type
+    AccountSessionAttributes:
+      example:
+        account_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        last_used: 2000-01-23T04:56:07.000+00:00
+        created_at: 2000-01-23T04:56:07.000+00:00
+        version: 0
+      properties:
+        account_id:
+          description: account id
+          format: uuid
+          type: string
+        created_at:
+          description: session creation date
+          format: date-time
+          type: string
+        version:
+          description: The version number of the account record
+          type: integer
+        last_used:
+          description: last used date
+          format: date-time
+          type: string
+      required:
+      - account_id
+      - created_at
+      - last_used
+      - version
+    AccountSessionsCollection:
+      example:
+        data:
+        - attributes:
+            account_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            last_used: 2000-01-23T04:56:07.000+00:00
+            created_at: 2000-01-23T04:56:07.000+00:00
+            version: 0
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          type: account_session
+        - attributes:
+            account_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            last_used: 2000-01-23T04:56:07.000+00:00
+            created_at: 2000-01-23T04:56:07.000+00:00
+            version: 0
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          type: account_session
+        links:
+          next: https://openapi-generator.tech
+          last: https://openapi-generator.tech
+          prev: https://openapi-generator.tech
+          self: https://openapi-generator.tech
+          first: https://openapi-generator.tech
+      properties:
+        data:
+          items:
+            $ref: "#/schemas/AccountSessionData"
+          type: array
+        links:
+          $ref: "#/schemas/PaginationData"
+      required:
+      - data
+      - links
+    Account:
+      example:
+        data:
+          attributes:
+            role: role
+            updated_at: 2000-01-23T04:56:07.000+00:00
+            created_at: 2000-01-23T04:56:07.000+00:00
+            version: 0
+            username: username
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          type: account
+        included:
+        - attributes:
+            updated_at: 2000-01-23T04:56:07.000+00:00
+            verified: true
+            created_at: 2000-01-23T04:56:07.000+00:00
+            version: 6
+            email: email
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          type: account_email
+        - attributes:
+            updated_at: 2000-01-23T04:56:07.000+00:00
+            verified: true
+            created_at: 2000-01-23T04:56:07.000+00:00
+            version: 6
+            email: email
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          type: account_email
+      properties:
+        data:
+          $ref: "#/schemas/Account_data"
+        included:
+          items:
+            $ref: "#/schemas/AccountEmail"
+          type: array
+      required:
+      - data
+    AccountEmail:
+      example:
+        attributes:
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          verified: true
+          created_at: 2000-01-23T04:56:07.000+00:00
+          version: 6
+          email: email
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        type: account_email
+      properties:
+        id:
+          description: account ID
+          format: uuid
+          type: string
+        type:
+          enum:
+          - account_email
+          type: string
+        attributes:
+          $ref: "#/schemas/AccountEmail_attributes"
+      required:
+      - attributes
+      - id
+      - type
+    Errors:
+      description: Standard JSON:API error
+      example:
+        errors:
+        - detail: Request body was expected
+          title: Bad Request
+          status: 400
+        - detail: Request body was expected
+          title: Bad Request
+          status: 400
+      properties:
+        errors:
+          description: Non empty array of errors occurred during request processing
+          items:
+            $ref: "#/schemas/Errors_errors_inner"
+          type: array
+      required:
+      - errors
+    PaginationData:
+      example:
+        next: https://openapi-generator.tech
+        last: https://openapi-generator.tech
+        prev: https://openapi-generator.tech
+        self: https://openapi-generator.tech
+        first: https://openapi-generator.tech
+      properties:
+        self:
+          description: link to the current page
+          format: uri
+          type: string
+        first:
+          description: link to the first page
+          format: uri
+          type: string
+        last:
+          description: link to the last page
+          format: uri
+          type: string
+        prev:
+          description: link to the previous page
+          format: uri
+          type: string
+        next:
+          description: link to the next page
+          format: uri
+          type: string
+      required:
+      - self
+    LoginByEmail_data_attributes:
+      example:
+        password: StrongP@ssw0rd!
+        email: example@gmail.com
+      properties:
+        email:
+          description: The account's email address.
+          example: example@gmail.com
+          format: email
+          type: string
+        password:
+          description: The account's password.
+          example: StrongP@ssw0rd!
+          format: password
+          type: string
+      required:
+      - email
+      - password
+    LoginByEmail_data:
+      example:
+        attributes:
+          password: StrongP@ssw0rd!
+          email: example@gmail.com
+        type: account_session
+      properties:
+        type:
+          enum:
+          - account_session
+          type: string
+        attributes:
+          $ref: "#/schemas/LoginByEmail_data_attributes"
+      required:
+      - attributes
+      - type
+    LoginByUsername_data_attributes:
+      example:
+        password: StrongP@ssw0rd!
+        username: example
+      properties:
+        username:
+          description: The account's username.
+          example: example
+          type: string
+        password:
+          description: The account's password.
+          example: StrongP@ssw0rd!
+          format: password
+          type: string
+      required:
+      - password
+      - username
+    LoginByUsername_data:
+      example:
+        attributes:
+          password: StrongP@ssw0rd!
+          username: example
+        type: account_session
+      properties:
+        type:
+          enum:
+          - account_session
+          type: string
+        attributes:
+          $ref: "#/schemas/LoginByUsername_data_attributes"
+      required:
+      - attributes
+      - type
+    Registration_data_attributes:
+      example:
+        password: StrongP@ssw0rd!
+        email: example@gmail.com
+        username: user123
+      properties:
+        email:
+          description: The account's email address.
+          example: example@gmail.com
+          format: email
+          type: string
+        username:
+          description: The account's username.
+          example: user123
+          type: string
+        password:
+          description: The account's password.
+          example: StrongP@ssw0rd!
+          format: password
+          type: string
+      required:
+      - email
+      - password
+      - username
+    Registration_data:
+      example:
+        attributes:
+          password: StrongP@ssw0rd!
+          email: example@gmail.com
+          username: user123
+        type: account
+      properties:
+        type:
+          enum:
+          - account
+          type: string
+        attributes:
+          $ref: "#/schemas/Registration_data_attributes"
+      required:
+      - attributes
+      - type
+    RegistrationAdmin_data_attributes:
+      example:
+        password: StrongP@ssw0rd!
+        role: admin
+        email: example1312@gmail.com
+        username: adminUser
+      properties:
+        email:
+          description: The account's email address.
+          example: example1312@gmail.com
+          format: email
+          type: string
+        username:
+          description: The account's username.
+          example: adminUser
+          type: string
+        password:
+          description: The account's password.
+          example: StrongP@ssw0rd!
+          format: password
+          type: string
+        role:
+          description: The role assigned to the registering account.
+          enum:
+          - admin
+          - moderator
+          example: admin
+          type: string
+      required:
+      - email
+      - password
+      - role
+      - username
+    RegistrationAdmin_data:
+      example:
+        attributes:
+          password: StrongP@ssw0rd!
+          role: admin
+          email: example1312@gmail.com
+          username: adminUser
+        type: account
+      properties:
+        type:
+          enum:
+          - account
+          type: string
+        attributes:
+          $ref: "#/schemas/RegistrationAdmin_data_attributes"
+      required:
+      - attributes
+      - type
+    RefreshSession_data_attributes:
+      example:
+        refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      properties:
+        refresh_token:
+          description: The refresh token to generate a new access token.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          type: string
+      required:
+      - refresh_token
+    RefreshSession_data:
+      example:
+        attributes:
+          refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: account_session
+      properties:
+        type:
+          enum:
+          - account_session
+          type: string
+        attributes:
+          $ref: "#/schemas/RefreshSession_data_attributes"
+      required:
+      - attributes
+      - type
+    UpdatePassword_data_attributes:
+      example:
+        old_password: OldP@ssw0rd!
+        new_password: StrongP@ssw0rd!
+      properties:
+        old_password:
+          description: The account's current password.
+          example: OldP@ssw0rd!
+          format: password
+          type: string
+        new_password:
+          description: The account's password.
+          example: StrongP@ssw0rd!
+          format: password
+          type: string
+      required:
+      - new_password
+      - old_password
+    UpdatePassword_data:
+      example:
+        attributes:
+          old_password: OldP@ssw0rd!
+          new_password: StrongP@ssw0rd!
+        type: account_password
+      properties:
+        type:
+          enum:
+          - account_password
+          type: string
+        attributes:
+          $ref: "#/schemas/UpdatePassword_data_attributes"
+      required:
+      - attributes
+      - type
+    UpdateUsername_data_attributes:
+      example:
+        username: username
+      properties:
+        username:
+          description: The account's username.
+          type: string
+      required:
+      - username
+    UpdateUsername_data:
+      example:
+        attributes:
+          username: username
+        type: account_username
+      properties:
+        type:
+          enum:
+          - account_username
+          type: string
+        attributes:
+          $ref: "#/schemas/UpdateUsername_data_attributes"
+      required:
+      - attributes
+      - type
+    TokensPair_data_attributes:
+      example:
+        access_token: access_token
+        refresh_token: refresh_token
+      properties:
+        access_token:
+          description: Access Token
+          type: string
+        refresh_token:
+          description: Refresh Token
+          type: string
+      required:
+      - access_token
+      - refresh_token
+    TokensPair_data:
+      example:
+        attributes:
+          access_token: access_token
+          refresh_token: refresh_token
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        type: tokens_pair
+      properties:
+        id:
+          description: account id
+          format: uuid
+          type: string
+        type:
+          enum:
+          - tokens_pair
+          type: string
+        attributes:
+          $ref: "#/schemas/TokensPair_data_attributes"
+      required:
+      - attributes
+      - id
+      - type
+    AccessToken_data_attributes:
+      properties:
+        refresh_token:
+          description: The access token to generate a new access token.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          type: string
+      required:
+      - access_token
+    AccessToken_data:
+      properties:
+        type:
+          enum:
+          - access_token
+          type: string
+        attributes:
+          $ref: "#/schemas/AccessToken_data_attributes"
+      required:
+      - attributes
+      - type
+    Account_data_attributes:
+      example:
+        role: role
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        created_at: 2000-01-23T04:56:07.000+00:00
+        version: 0
+        username: username
+      properties:
+        role:
+          description: The role assigned to the account
+          type: string
+        username:
+          description: The username of the account
+          type: string
+        version:
+          description: The version number of the account record
+          type: integer
+        created_at:
+          description: The date and time when the account was created
+          format: date-time
+          type: string
+        updated_at:
+          description: The date and time when the account was last updated
+          format: date-time
+          type: string
+      required:
+      - created_at
+      - role
+      - updated_at
+      - username
+      - version
+    Account_data:
+      example:
+        attributes:
+          role: role
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          created_at: 2000-01-23T04:56:07.000+00:00
+          version: 0
+          username: username
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        type: account
+      properties:
+        id:
+          description: account ID
+          format: uuid
+          type: string
+        type:
+          enum:
+          - account
+          type: string
+        attributes:
+          $ref: "#/schemas/Account_data_attributes"
+      required:
+      - attributes
+      - id
+      - type
+    AccountEmail_attributes:
+      example:
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        verified: true
+        created_at: 2000-01-23T04:56:07.000+00:00
+        version: 6
+        email: email
+      properties:
+        email:
+          description: The email address associated with the account
+          format: email
+          type: string
+        version:
+          description: The version number of the account record
+          type: integer
+        verified:
+          description: Indicates whether the email address has been verified
+          type: boolean
+        updated_at:
+          description: The date and time when the email information was last updated
+          format: date-time
+          type: string
+        created_at:
+          description: The date and time when the email information was created
+          format: date-time
+          type: string
+      required:
+      - created_at
+      - email
+      - updated_at
+      - verified
+      - version
+    Errors_errors_inner:
+      example:
+        detail: Request body was expected
+        title: Bad Request
+        status: 400
+      properties:
+        title:
+          description: "Title is a short, human-readable summary of the problem"
+          example: Bad Request
+          type: string
+        detail:
+          description: Detail is a human-readable explanation specific to this occurrence
+            of the problem
+          example: Request body was expected
+          type: string
+        status:
+          description: Status is the HTTP status code applicable to this problem
+          enum:
+          - 400
+          - 401
+          - 403
+          - 404
+          - 409
+          - 500
+          example: 400
+          type: integer
+      required:
+      - status
+      - title
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

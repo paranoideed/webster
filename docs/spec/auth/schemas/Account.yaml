@@ -1,0 +1,72 @@
+type: object
+required:
+  - data
+properties:
+  data:
+    type: object
+    required:
+      - id
+      - type
+      - attributes
+      - relationships
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: "account ID"
+      type:
+        type: string
+        enum: [ account ]
+      attributes:
+        type: object
+        required:
+          - role
+          - email
+          - verified
+          - created_at
+          - updated_at
+        properties:
+          role:
+            type: string
+            description: "The role assigned to the account"
+            enum: [ admin, user ]
+            example: "user"
+          email:
+            type: string
+            format: email
+            description: "The email address associated with the account"
+          verified:
+            type: boolean
+            description: "Whether the email address has been verified"
+            example: false
+          created_at:
+            type: string
+            format: date-time
+            description: "The date and time when the account was created"
+          updated_at:
+            type: string
+            format: date-time
+            description: "The date and time when the account was last updated"
+      relationships:
+        type: object
+        required:
+          - profile
+        properties:
+          profile:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                required:
+                  - id
+                  - type
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: "Profile id (same as account id)"
+                  type:
+                    type: string
+                    enum: [ profile ]

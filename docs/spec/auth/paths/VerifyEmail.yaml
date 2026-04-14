@@ -1,0 +1,33 @@
+post:
+  tags:
+    - auth
+  summary: Request email verification code
+  description: >
+    Sends a 6-digit verification code to the authenticated user's email address.
+    The code is valid for 5 minutes.
+  security:
+    - cookieAuth: []
+  responses:
+    '204':
+      description: Verification code sent successfully.
+
+    '400':
+      description: Email is already verified.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

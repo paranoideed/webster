@@ -1,0 +1,79 @@
+get:
+  tags:
+    - profiles
+  summary: Get my profile
+  description: >
+    Returns the current authenticated user's profile.
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  responses:
+    '200':
+      description: Profile found.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/Profile.yaml'
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+patch:
+  tags:
+    - profiles
+  summary: Update my profile
+  description: >
+    Updates the current authenticated user's profile.
+    The `data.id` in the request body must match the authenticated account id.
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../schemas/UpdateProfile.yaml'
+
+  responses:
+    '200':
+      description: Profile successfully updated.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/Profile.yaml'
+    '400':
+      description: Validation error or invalid payload.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '409':
+      description: Username already taken.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

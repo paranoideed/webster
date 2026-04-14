@@ -1,0 +1,38 @@
+get:
+  tags:
+    - auth
+  summary: Google OAuth callback
+  description: >
+    Exchanges the Google OAuth `code` for user info, creates or logs in the account,
+    sets `access` and `refresh` cookies, and returns the account object.
+  parameters:
+    - in: query
+      name: code
+      required: true
+      schema:
+        type: string
+      description: OAuth authorization code returned by Google.
+
+  responses:
+    '200':
+      description: >
+        Successful Google login. `access` and `refresh` cookies are set.
+        Returns the account object.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/Account.yaml'
+
+    '400':
+      description: Missing or invalid `code` query parameter.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

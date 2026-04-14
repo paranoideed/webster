@@ -1,0 +1,27 @@
+delete:
+  tags:
+    - auth
+  summary: Delete my account
+  description: >
+    Soft-deletes the authenticated account and clears `access` and `refresh` cookies.
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  responses:
+    '204':
+      description: Account successfully deleted. Auth cookies are cleared.
+
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

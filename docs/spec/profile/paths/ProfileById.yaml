@@ -1,0 +1,43 @@
+get:
+  tags:
+    - profiles
+  summary: Get profile by account id
+  description: >
+    Returns a public profile by `account_id` (UUID).
+    If the profile does not exist, responds with 404.
+  parameters:
+    - name: account_id
+      in: path
+      required: true
+      description: Account id (UUID).
+      schema:
+        type: string
+        format: uuid
+  responses:
+    "200":
+      description: Profile found.
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/Profile.yaml"
+
+    "400":
+      description: Bad request (invalid account_id).
+      content:
+        application/problem+json:
+          schema:
+            $ref: "../../shared/Errors.yaml"
+
+    "404":
+      description: Profile for account does not exist.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "../../shared/Errors.yaml"
+
+    "500":
+      description: Internal server error.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "../../shared/Errors.yaml"

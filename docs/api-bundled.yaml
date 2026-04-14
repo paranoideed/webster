@@ -1,0 +1,817 @@
+openapi: 3.1.0
+info:
+  title: Webster API
+  description: API documentation for Webster backend
+  version: 0.1.0
+servers:
+  - url: http://localhost:3000
+security: []
+paths:
+  /webster/v1/accounts/registration:
+    post:
+      tags:
+        - auth
+      summary: Register a new account
+      description: |
+        Registers a new user account with email, username, and password. Returns 201 with no body on success.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Registration'
+      responses:
+        '201':
+          description: Account successfully registered.
+        '400':
+          description: Validation error (e.g. password too short, invalid email).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '409':
+          description: |
+            Conflict: An account with this email or username already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/accounts/login:
+    post:
+      tags:
+        - auth
+      summary: Login with email and password
+      description: |
+        Authenticates a user using their email and password. On success, sets `access` and `refresh` cookies and returns the account object.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginByEmail'
+      responses:
+        '200':
+          description: |
+            Successful login. `access` cookie (JWT access token) and `refresh` httpOnly cookie (JWT refresh token) are set.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Invalid email or password.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/accounts/login/google:
+    post:
+      tags:
+        - auth
+      summary: Start Google OAuth login
+      description: |
+        Redirects the user-agent to the Google OAuth consent screen. This endpoint returns a 307 redirect and does not return a JSON body.
+      responses:
+        '307':
+          description: Temporary redirect to Google OAuth consent screen.
+          headers:
+            Location:
+              description: Google OAuth authorization URL.
+              schema:
+                type: string
+                format: uri
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/accounts/login/google/callback:
+    get:
+      tags:
+        - auth
+      summary: Google OAuth callback
+      description: |
+        Exchanges the Google OAuth `code` for user info, creates or logs in the account, sets `access` and `refresh` cookies, and returns the account object.
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+          description: OAuth authorization code returned by Google.
+      responses:
+        '200':
+          description: |
+            Successful Google login. `access` and `refresh` cookies are set. Returns the account object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Missing or invalid `code` query parameter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/accounts/logout:
+    post:
+      tags:
+        - auth
+      summary: Logout
+      description: |
+        Clears the `access` and `refresh` cookies, effectively logging out the authenticated user. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: Successfully logged out. Auth cookies are cleared.
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/accounts/refresh:
+    post:
+      tags:
+        - auth
+      summary: Refresh access token
+      description: |
+        Issues a new access/refresh token pair using the `refresh` httpOnly cookie. Both `access` and `refresh` cookies are replaced on success. Requires a valid refresh token cookie.
+      security:
+        - refreshCookieAuth: []
+      responses:
+        '200':
+          description: Tokens refreshed. New `access` and `refresh` cookies are set.
+        '401':
+          description: Unauthorized. Refresh token is missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/accounts:
+    delete:
+      tags:
+        - auth
+      summary: Delete my account
+      description: |
+        Soft-deletes the authenticated account and clears `access` and `refresh` cookies. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: Account successfully deleted. Auth cookies are cleared.
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/accounts/me/verify-email:
+    post:
+      tags:
+        - auth
+      summary: Verify email address
+      description: |
+        Confirms a user's email address using a verification token sent to their inbox. Not yet implemented — placeholder for future use.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Verification token received by email.
+                  example: a1b2c3d4e5f6...
+      responses:
+        '204':
+          description: Email successfully verified.
+        '400':
+          description: Invalid or expired token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/profiles:
+    get:
+      tags:
+        - profiles
+      summary: Filter profiles
+      description: |
+        Returns a paginated list of public profiles. Supports text-based filtering against username (partial match). No authentication required.
+      parameters:
+        - in: query
+          name: text
+          required: false
+          schema:
+            type: string
+          description: Filter by text (partial match on username)
+        - in: query
+          name: page[limit]
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 'Max number of items to return (1–100, default: 20)'
+        - in: query
+          name: page[offset]
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: 'Number of items to skip (default: 0)'
+      responses:
+        '200':
+          description: Paginated list of profiles.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfilesCollection'
+        '400':
+          description: Validation error in query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/profiles/me:
+    get:
+      tags:
+        - profiles
+      summary: Get my profile
+      description: |
+        Returns the current authenticated user's profile. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Profile found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    patch:
+      tags:
+        - profiles
+      summary: Update my profile
+      description: |
+        Updates the current authenticated user's profile. The `data.id` in the request body must match the authenticated account id. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfile'
+      responses:
+        '200':
+          description: Profile successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '400':
+          description: Validation error or invalid payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '409':
+          description: Username already taken.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/profiles/me/avatar:
+    post:
+      tags:
+        - profiles
+      summary: Upload my avatar
+      description: |
+        Uploads or replaces the current authenticated user's avatar image. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - avatar
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: Avatar image file
+      responses:
+        '200':
+          description: Avatar uploaded. Returns the updated profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '400':
+          description: Bad request (invalid file format or size).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    delete:
+      tags:
+        - profiles
+      summary: Delete my avatar
+      description: |
+        Deletes the current authenticated user's avatar image. Requires a valid access token.
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: Avatar deleted.
+        '401':
+          description: Unauthorized. Missing or invalid access token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/profiles/{account_id}:
+    get:
+      tags:
+        - profiles
+      summary: Get profile by account id
+      description: |
+        Returns a public profile by `account_id` (UUID). If the profile does not exist, responds with 404.
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: Account id (UUID).
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Profile found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '400':
+          description: Bad request (invalid account_id).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Profile for account does not exist.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/profiles/@{username}:
+    get:
+      tags:
+        - profiles
+      summary: Get profile by username
+      description: |
+        Returns a public profile by `username`. If the profile does not exist, responds with 404.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: Username of the profile owner.
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Profile found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '404':
+          description: Profile for user does not exist.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '500':
+          description: Internal server error.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access
+    refreshCookieAuth:
+      type: apiKey
+      in: cookie
+      name: refresh
+  schemas:
+    Errors:
+      description: Standard JSON:API error
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          description: Non empty array of errors occurred during request processing
+          items:
+            type: object
+            required:
+              - status
+            properties:
+              status:
+                type: integer
+                description: HTTP status code applicable to this problem
+                example: 400
+                enum:
+                  - 400
+                  - 401
+                  - 403
+                  - 404
+                  - 409
+                  - 500
+              detail:
+                description: Human-readable explanation specific to this occurrence of the problem. May be a string or an object (e.g. validation error details).
+                example: Request body was expected
+    PaginationLinks:
+      $ref: '#/components/schemas/PaginationData'
+    LoginByEmail:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - attributes
+          properties:
+            type:
+              type: string
+              enum:
+                - account
+            attributes:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: The account's email address.
+                  example: example@gmail.com
+                password:
+                  type: string
+                  format: password
+                  description: The account's password.
+                  example: StrongP@ssw0rd!
+    Registration:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - attributes
+          properties:
+            type:
+              type: string
+              enum:
+                - account
+            attributes:
+              type: object
+              required:
+                - email
+                - username
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: The account's email address.
+                  example: example@gmail.com
+                username:
+                  type: string
+                  description: The account's username.
+                  example: user123
+                password:
+                  type: string
+                  format: password
+                  description: The account's password.
+                  example: StrongP@ssw0rd!
+    Account:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - id
+            - type
+            - attributes
+            - relationships
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: account ID
+            type:
+              type: string
+              enum:
+                - account
+            attributes:
+              type: object
+              required:
+                - role
+                - email
+                - verified
+                - created_at
+                - updated_at
+              properties:
+                role:
+                  type: string
+                  description: The role assigned to the account
+                  enum:
+                    - admin
+                    - user
+                  example: user
+                email:
+                  type: string
+                  format: email
+                  description: The email address associated with the account
+                verified:
+                  type: boolean
+                  description: Whether the email address has been verified
+                  example: false
+                created_at:
+                  type: string
+                  format: date-time
+                  description: The date and time when the account was created
+                updated_at:
+                  type: string
+                  format: date-time
+                  description: The date and time when the account was last updated
+            relationships:
+              type: object
+              required:
+                - profile
+              properties:
+                profile:
+                  type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      required:
+                        - id
+                        - type
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          description: Profile id (same as account id)
+                        type:
+                          type: string
+                          enum:
+                            - profile
+    UpdateProfile:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - id
+            - type
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: must match the authenticated account id
+            type:
+              type: string
+              enum:
+                - profile
+            attributes:
+              type: object
+              description: All fields are optional
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 32
+                  description: New username (letters, numbers, -._! only)
+                  example: new_username
+    Profile:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/ProfileData'
+    ProfileData:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: account ID
+        type:
+          type: string
+          enum:
+            - profile
+        attributes:
+          type: object
+          required:
+            - username
+            - visibility
+            - updated_at
+            - created_at
+          properties:
+            username:
+              type: string
+              description: username (3–32 chars, letters/numbers/-._!)
+              example: john_doe
+            visibility:
+              type: boolean
+              description: whether the profile is publicly visible
+              example: true
+            avatar_url:
+              type: string
+              nullable: true
+              description: public URL of the avatar image, or null if not set
+              example: https://s3.example.com/avatars/abc123.png
+            updated_at:
+              type: string
+              format: date-time
+              description: last update timestamp
+            created_at:
+              type: string
+              format: date-time
+              description: creation timestamp
+    ProfilesCollection:
+      type: object
+      required:
+        - data
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfileData'
+        links:
+          $ref: '#/components/schemas/PaginationData'
+    PaginationData:
+      type: object
+      required:
+        - self
+      properties:
+        self:
+          type: string
+          format: uri
+          description: link to the current page
+        first:
+          type: string
+          format: uri
+          description: link to the first page
+        last:
+          type: string
+          format: uri
+          description: link to the last page
+        prev:
+          type: string
+          format: uri
+          description: link to the previous page
+        next:
+          type: string
+          format: uri
+          description: link to the next page

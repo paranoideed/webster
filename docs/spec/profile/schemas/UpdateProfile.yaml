@@ -1,0 +1,27 @@
+type: object
+required:
+  - data
+properties:
+  data:
+    type: object
+    required:
+      - id
+      - type
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: "must match the authenticated account id"
+      type:
+        type: string
+        enum: [ profile ]
+      attributes:
+        type: object
+        description: "All fields are optional"
+        properties:
+          username:
+            type: string
+            minLength: 3
+            maxLength: 32
+            description: "New username (letters, numbers, -._! only)"
+            example: "new_username"

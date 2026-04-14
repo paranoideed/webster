@@ -1,0 +1,48 @@
+services:
+  backend:
+    container_name: webster-backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT}:3000"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      PORT: 3000
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_started
+    command: npm run start:dev
+
+  db:
+    container_name: webster-postgres
+    image: postgres:17
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - ${DB_PORT}:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  docs-swagger:
+    container_name: webster-docs
+    image: swaggerapi/swagger-ui
+    environment:
+      - SWAGGER_JSON=/docs/api-bundled.yaml
+    volumes:
+      - ./docs:/docs:ro
+    ports:
+      - "${DOCS_PORT}:8080"
+
+volumes:
+  postgres_data:

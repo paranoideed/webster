@@ -1,0 +1,28 @@
+post:
+  tags:
+    - auth
+  summary: Refresh access token
+  description: >
+    Issues a new access/refresh token pair using the `refresh` httpOnly cookie.
+    Both `access` and `refresh` cookies are replaced on success.
+    Requires a valid refresh token cookie.
+  security:
+    - refreshCookieAuth: []
+
+  responses:
+    '200':
+      description: Tokens refreshed. New `access` and `refresh` cookies are set.
+
+    '401':
+      description: Unauthorized. Refresh token is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

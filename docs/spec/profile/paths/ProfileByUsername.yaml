@@ -1,0 +1,34 @@
+get:
+  tags:
+    - profiles
+  summary: Get profile by username
+  description: >
+    Returns a public profile by `username`.
+    If the profile does not exist, responds with 404.
+  parameters:
+    - name: username
+      in: path
+      required: true
+      description: Username of the profile owner.
+      schema:
+        type: string
+        minLength: 1
+  responses:
+    "200":
+      description: Profile found.
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/Profile.yaml"
+    "404":
+      description: Profile for user does not exist.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "../../shared/Errors.yaml"
+    "500":
+      description: Internal server error.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "../../shared/Errors.yaml"

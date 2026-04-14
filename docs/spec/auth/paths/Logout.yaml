@@ -1,0 +1,27 @@
+post:
+  tags:
+    - auth
+  summary: Logout
+  description: >
+    Clears the `access` and `refresh` cookies, effectively logging out the authenticated user.
+    Requires a valid access token.
+  security:
+    - cookieAuth: []
+
+  responses:
+    '204':
+      description: Successfully logged out. Auth cookies are cleared.
+
+    '401':
+      description: Unauthorized. Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

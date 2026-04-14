@@ -1,0 +1,37 @@
+type: object
+required:
+  - id
+  - type
+  - attributes
+properties:
+  id:
+    type: string
+    format: uuid
+    description: "account ID"
+  type:
+    type: string
+    enum: [ profile ]
+  attributes:
+    type: object
+    required:
+      - username
+      - updated_at
+      - created_at
+    properties:
+      username:
+        type: string
+        description: "username (3–32 chars, letters/numbers/-._!)"
+        example: "john_doe"
+      avatar_url:
+        type: string
+        nullable: true
+        description: "public URL of the avatar image, or null if not set"
+        example: "https://s3.example.com/avatars/abc123.png"
+      updated_at:
+        type: string
+        format: date-time
+        description: "last update timestamp"
+      created_at:
+        type: string
+        format: date-time
+        description: "creation timestamp"

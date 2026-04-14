@@ -1,0 +1,38 @@
+post:
+  tags:
+    - auth
+  summary: Register a new account
+  description: >
+    Registers a new user account with email, username, and password.
+    Returns 201 with no body on success.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../schemas/Registration.yaml'
+  responses:
+    '201':
+      description: Account successfully registered.
+
+    '400':
+      description: Validation error (e.g. password too short, invalid email).
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+    '409':
+      description: >
+        Conflict: An account with this email or username already exists.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+    '500':
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
