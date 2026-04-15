@@ -58,9 +58,9 @@ export class Init1774200000000 implements MigrationInterface {
 				"name"       character varying(255) NOT NULL,
 				"created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 				"updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-				"deleted_at"  TIMESTAMP WITH TIME ZONE,
+				"deleted_at" TIMESTAMP WITH TIME ZONE,
 				CONSTRAINT "PK_projects" PRIMARY KEY ("id")
-			 )`,
+			)`,
 		);
 		await queryRunner.query(
 			`CREATE TABLE "project_members" (
@@ -70,10 +70,9 @@ export class Init1774200000000 implements MigrationInterface {
 				"role"       "public"."project_member_roles" NOT NULL DEFAULT 'viewer',
 				"created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 				"updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-				"deleted_at"  TIMESTAMP WITH TIME ZONE,
-				CONSTRAINT "UQ_project_members_account_project" UNIQUE ("account_id", "project_id"),
+				"deleted_at" TIMESTAMP WITH TIME ZONE,
 				CONSTRAINT "PK_project_members" PRIMARY KEY ("id")
-			 )`,
+			)`,
 		);
 		await queryRunner.query(
 			`CREATE TABLE "project_invites" (
@@ -120,9 +119,20 @@ export class Init1774200000000 implements MigrationInterface {
 			 FOREIGN KEY ("invited_by") REFERENCES "accounts"("id")
 			 ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE`,
 		);
+
+		// Partial unique index — soft-deleted rows don't block re-adding the same member
+		await queryRunner.query(
+			`CREATE UNIQUE INDEX "UQ_project_members_account_project_active"
+			 ON "project_members" ("account_id", "project_id")
+			 WHERE "deleted_at" IS NULL`,
+		);
 	}
 
 	public async down(queryRunner: QueryRunner): Promise<void> {
+		await queryRunner.query(
+			`DROP INDEX "UQ_project_members_account_project_active"`,
+		);
+
 		await queryRunner.query(
 			`ALTER TABLE "project_invites" DROP CONSTRAINT "FK_project_invites_invited_by"`,
 		);
