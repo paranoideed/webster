@@ -19,9 +19,6 @@ import { accountResponse } from "./auth.response";
 import { CurrentUser } from "../shared/decorators";
 import { AppLogger } from "../shared/logger";
 
-// i think /accounts its better than /account because we must decide
-// use always xxxs or xxx so i think we already decide xxxs
-// and i think 95% project use xxxs
 @Controller("accounts")
 export class AuthController {
 	private readonly log = new AppLogger(AuthController.name);
