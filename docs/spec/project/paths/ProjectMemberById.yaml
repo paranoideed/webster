@@ -10,7 +10,7 @@ get:
     - cookieAuth: []
 
   parameters:
-    - name: memberId
+    - name: member_id
       in: path
       required: true
       schema:
@@ -63,7 +63,7 @@ patch:
     - cookieAuth: []
 
   parameters:
-    - name: memberId
+    - name: member_id
       in: path
       required: true
       schema:
@@ -129,7 +129,7 @@ delete:
     - cookieAuth: []
 
   parameters:
-    - name: memberId
+    - name: member_id
       in: path
       required: true
       schema:

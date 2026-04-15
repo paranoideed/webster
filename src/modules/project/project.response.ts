@@ -73,7 +73,6 @@ export function inviteData(invite: ProjectInvite) {
 		attributes: {
 			project_id: invite.projectId,
 			email: invite.email,
-			invited_by: invite.invitedBy,
 			expires_at: invite.expiresAt,
 			created_at: invite.createdAt,
 		},

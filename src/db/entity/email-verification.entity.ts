@@ -14,8 +14,8 @@ export class EmailVerification extends BaseEntity {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
-	@Column({ length: 256 })
-	email: string;
+	@Column({ name: 'account_id', type: 'uuid' })
+	accountId: string;
 
 	@Column({ unique: true, length: 256 })
 	code: string;
@@ -33,6 +33,6 @@ export class EmailVerification extends BaseEntity {
 	createdAt: Date;
 
 	@ManyToOne(() => Account, { onDelete: 'CASCADE' })
-	@JoinColumn({ name: 'email', referencedColumnName: 'email' })
+	@JoinColumn({ name: 'account_id' })
 	account: Account;
 }

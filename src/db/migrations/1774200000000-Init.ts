@@ -44,7 +44,7 @@ export class Init1774200000000 implements MigrationInterface {
 		await queryRunner.query(
 			`CREATE TABLE "email_verifications" (
 				"id"         uuid NOT NULL DEFAULT uuid_generate_v4(),
-				"email"      character varying(256) NOT NULL,
+				"account_id" uuid NOT NULL,
 				"code"       character varying(256) NOT NULL,
 				"expires_at" TIMESTAMP WITH TIME ZONE NOT NULL,
 				"created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -80,7 +80,6 @@ export class Init1774200000000 implements MigrationInterface {
 				"project_id"  uuid NOT NULL,
 				"email"       character varying(256) NOT NULL,
 				"token"       character varying(64) NOT NULL,
-				"invited_by"  uuid NOT NULL,
 				"expires_at"  TIMESTAMP WITH TIME ZONE NOT NULL,
 				"created_at"  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 				CONSTRAINT "UQ_project_invites_token" UNIQUE ("token"),
@@ -95,8 +94,8 @@ export class Init1774200000000 implements MigrationInterface {
 			 ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE`
 		);
 		await queryRunner.query(
-			`ALTER TABLE "email_verifications" ADD CONSTRAINT "FK_email_verifications_email"
-			 FOREIGN KEY ("email") REFERENCES "accounts"("email")
+			`ALTER TABLE "email_verifications" ADD CONSTRAINT "FK_email_verifications_account_id"
+			 FOREIGN KEY ("account_id") REFERENCES "accounts"("id")
 			 ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE`
 		);
 		await queryRunner.query(
@@ -114,11 +113,6 @@ export class Init1774200000000 implements MigrationInterface {
 			 FOREIGN KEY ("project_id") REFERENCES "projects"("id")
 			 ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE`,
 		);
-		await queryRunner.query(
-			`ALTER TABLE "project_invites" ADD CONSTRAINT "FK_project_invites_invited_by"
-			 FOREIGN KEY ("invited_by") REFERENCES "accounts"("id")
-			 ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE`,
-		);
 
 		// Partial unique index — soft-deleted rows don't block re-adding the same member
 		await queryRunner.query(
@@ -134,9 +128,6 @@ export class Init1774200000000 implements MigrationInterface {
 		);
 
 		await queryRunner.query(
-			`ALTER TABLE "project_invites" DROP CONSTRAINT "FK_project_invites_invited_by"`,
-		);
-		await queryRunner.query(
 			`ALTER TABLE "project_invites" DROP CONSTRAINT "FK_project_invites_project_id"`,
 		);
 		await queryRunner.query(`DROP TABLE "project_invites"`);
@@ -151,7 +142,7 @@ export class Init1774200000000 implements MigrationInterface {
 		await queryRunner.query(`DROP TABLE "projects"`);
 		await queryRunner.query(`DROP TYPE "public"."project_member_roles"`);
 
-		await queryRunner.query(`ALTER TABLE "email_verifications" DROP CONSTRAINT "FK_email_verifications_email"`);
+		await queryRunner.query(`ALTER TABLE "email_verifications" DROP CONSTRAINT "FK_email_verifications_account_id"`);
 		await queryRunner.query(`ALTER TABLE "profiles" DROP CONSTRAINT "FK_profiles_account_id"`);
 		await queryRunner.query(`DROP TABLE "email_verifications"`);
 		await queryRunner.query(`DROP TABLE "profiles"`);

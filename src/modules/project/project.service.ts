@@ -192,7 +192,7 @@ export class ProjectService {
 		const token = randomBytes(32).toString("hex");
 		const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-		const invite = ProjectInvite.create({ projectId, email, token, invitedBy: accountId, expiresAt });
+		const invite = ProjectInvite.create({ projectId, email, token, expiresAt });
 		await invite.save();
 
 		void this.mail.sendProjectInvite(inviterName, project.name, email, token);

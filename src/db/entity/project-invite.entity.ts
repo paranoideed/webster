@@ -7,7 +7,6 @@ import {
 	ManyToOne,
 	PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Account } from './account.entity';
 import { Project } from './project.entity';
 
 @Entity({ name: 'project_invites' })
@@ -23,9 +22,6 @@ export class ProjectInvite extends BaseEntity {
 
 	@Column({ unique: true, length: 64 })
 	token: string;
-
-	@Column({ name: 'invited_by', type: 'uuid' })
-	invitedBy: string;
 
 	@Column({
 		name: 'expires_at',
@@ -43,7 +39,4 @@ export class ProjectInvite extends BaseEntity {
 	@JoinColumn({ name: 'project_id' })
 	project: Project;
 
-	@ManyToOne(() => Account, { onDelete: 'CASCADE' })
-	@JoinColumn({ name: 'invited_by' })
-	inviter: Account;
 }

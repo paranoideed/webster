@@ -901,7 +901,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Errors'
-  /webster/v1/members/{memberId}:
+  /webster/v1/members/{member_id}:
     get:
       tags:
         - project members
@@ -911,7 +911,7 @@ paths:
       security:
         - cookieAuth: []
       parameters:
-        - name: memberId
+        - name: member_id
           in: path
           required: true
           schema:
@@ -958,7 +958,7 @@ paths:
       security:
         - cookieAuth: []
       parameters:
-        - name: memberId
+        - name: member_id
           in: path
           required: true
           schema:
@@ -1017,7 +1017,7 @@ paths:
       security:
         - cookieAuth: []
       parameters:
-        - name: memberId
+        - name: member_id
           in: path
           required: true
           schema:
@@ -1628,7 +1628,6 @@ components:
           required:
             - project_id
             - email
-            - invited_by
             - expires_at
             - created_at
           properties:
@@ -1640,10 +1639,6 @@ components:
               type: string
               format: email
               description: email address the invite was sent to
-            invited_by:
-              type: string
-              format: uuid
-              description: account ID of the user who sent the invite
             expires_at:
               type: string
               format: date-time

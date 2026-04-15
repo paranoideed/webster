@@ -114,7 +114,7 @@ paths:
     $ref: './spec/project/paths/ProjectById.yaml'
   /webster/v1/projects/{id}/members:
     $ref: './spec/project/paths/ProjectMembers.yaml'
-  /webster/v1/members/{memberId}:
+  /webster/v1/members/{member_id}:
     $ref: './spec/project/paths/ProjectMemberById.yaml'
   /webster/v1/projects/{id}/invites:
     $ref: './spec/project/paths/ProjectInvites.yaml'

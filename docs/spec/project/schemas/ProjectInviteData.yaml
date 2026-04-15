@@ -16,7 +16,6 @@ properties:
     required:
       - project_id
       - email
-      - invited_by
       - expires_at
       - created_at
     properties:
@@ -28,10 +27,6 @@ properties:
         type: string
         format: email
         description: "email address the invite was sent to"
-      invited_by:
-        type: string
-        format: uuid
-        description: "account ID of the user who sent the invite"
       expires_at:
         type: string
         format: date-time

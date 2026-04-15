@@ -26,40 +26,40 @@ export class MemberController {
 
 	constructor(private projectService: ProjectService) {}
 
-	@Get(":memberId")
+	@Get(":member_id")
 	async getMember(
 		@CurrentUser() user: Express.User,
-		@Param("memberId", ParseUUIDPipe) memberId: string,
+		@Param("member_id", ParseUUIDPipe) member_id: string,
 		@Res() res: Response,
 	) {
-		const member = await this.projectService.getMember(user.id, memberId);
-		this.log.debug("GET", `/members/${memberId}`, 200);
+		const member = await this.projectService.getMember(user.id, member_id);
+		this.log.debug("GET", `/members/${member_id}`, 200);
 		return res.json(memberResponse(member));
 	}
 
-	@Patch(":memberId")
+	@Patch(":member_id")
 	async updateMember(
 		@CurrentUser() user: Express.User,
-		@Param("memberId", ParseUUIDPipe) memberId: string,
+		@Param("member_id", ParseUUIDPipe) member_id: string,
 		@Body() dto: UpdateMemberDto,
 		@Res() res: Response,
 	) {
 		const member = await this.projectService.updateMember(
 			user.id,
-			memberId,
+			member_id,
 			dto.data.attributes.role,
 		);
-		this.log.info("PATCH", `/members/${memberId}`, 200);
+		this.log.info("PATCH", `/members/${member_id}`, 200);
 		return res.json(memberResponse(member));
 	}
 
-	@Delete(":memberId")
+	@Delete(":member_id")
 	@HttpCode(HttpStatus.NO_CONTENT)
 	async removeMember(
 		@CurrentUser() user: Express.User,
-		@Param("memberId", ParseUUIDPipe) memberId: string,
+		@Param("member_id", ParseUUIDPipe) member_id: string,
 	) {
-		await this.projectService.removeMember(user.id, memberId);
-		this.log.info("DELETE", `/members/${memberId}`, 204);
+		await this.projectService.removeMember(user.id, member_id);
+		this.log.info("DELETE", `/members/${member_id}`, 204);
 	}
 }

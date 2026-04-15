@@ -172,7 +172,7 @@ export class AuthService {
 		const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
 		const verification = EmailVerification.create({
-			email: account.email,
+			accountId,
 			code,
 			expiresAt
 		});
@@ -192,7 +192,7 @@ export class AuthService {
 
 		const verification = await EmailVerification.findOne({
 			where: {
-				email: account.email,
+				accountId,
 				code,
 				expiresAt: MoreThan(new Date())
 			}
