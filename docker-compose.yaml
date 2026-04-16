@@ -60,11 +60,19 @@ services:
     container_name: webster-docs
     image: swaggerapi/swagger-ui
     environment:
-      - SWAGGER_JSON=/docs/api-bundled.yaml
+      - SWAGGER_JSON=/docs/rest/api-bundled.yaml
     volumes:
       - ./docs:/docs:ro
     ports:
       - "${DOCS_PORT}:8080"
+
+  docs-async:
+    container_name: webster-docs-async
+    image: nginx:alpine
+    volumes:
+      - ./docs/async:/usr/share/nginx/html:ro
+    ports:
+      - "${ASYNC_DOCS_PORT:-3001}:80"
 
 volumes:
   postgres_data:

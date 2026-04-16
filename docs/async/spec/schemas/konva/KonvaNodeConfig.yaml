@@ -1,0 +1,17 @@
+type: object
+required: [className, attrs]
+properties:
+  className:
+    type: string
+    example: Rect
+  attrs:
+    type: object
+    required: [id]
+    properties:
+      id:
+        type: string
+    additionalProperties: true
+  children:
+    type: array
+    items:
+      type: object

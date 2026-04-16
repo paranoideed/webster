@@ -1,0 +1,8 @@
+type: object
+required: [op, layer]
+properties:
+  op:
+    type: string
+    enum: [add_layer]
+  layer:
+    $ref: '../konva/KonvaLayerConfig.yaml'

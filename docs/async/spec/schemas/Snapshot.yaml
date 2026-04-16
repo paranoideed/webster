@@ -1,0 +1,12 @@
+type: object
+required: [version, body, createdAt]
+properties:
+  version:
+    type: integer
+    description: Snapshot version index (0, 1, 2, …)
+    example: 2
+  body:
+    $ref: './konva/KonvaStageConfig.yaml'
+  createdAt:
+    type: string
+    format: date-time

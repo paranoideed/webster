@@ -1,0 +1,11 @@
+type: object
+required: [op, id, props]
+properties:
+  op:
+    type: string
+    enum: [update]
+  id:
+    type: string
+  props:
+    type: object
+    additionalProperties: true

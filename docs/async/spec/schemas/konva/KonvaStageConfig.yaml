@@ -1,0 +1,13 @@
+type: object
+required: [className, attrs, children]
+properties:
+  className:
+    type: string
+    enum: [Stage]
+  attrs:
+    type: object
+    additionalProperties: true
+  children:
+    type: array
+    items:
+      $ref: './KonvaLayerConfig.yaml'

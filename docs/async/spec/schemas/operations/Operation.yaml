@@ -1,0 +1,12 @@
+oneOf:
+  - $ref: './OpAdd.yaml'
+  - $ref: './OpUpdate.yaml'
+  - $ref: './OpDelete.yaml'
+  - $ref: './OpReorder.yaml'
+  - $ref: './OpMoveToLayer.yaml'
+  - $ref: './OpAddLayer.yaml'
+  - $ref: './OpUpdateLayer.yaml'
+  - $ref: './OpDeleteLayer.yaml'
+  - $ref: './OpReorderLayer.yaml'
+  - $ref: './OpUpdateStage.yaml'
+discriminator: op

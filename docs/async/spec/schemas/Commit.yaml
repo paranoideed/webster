@@ -1,0 +1,16 @@
+type: object
+required: [number, previous, changes]
+properties:
+  number:
+    type: integer
+    example: 6
+  previous:
+    type: integer
+    example: 5
+  changes:
+    type: array
+    items:
+      $ref: './operations/Operation.yaml'
+  createdAt:
+    type: string
+    format: date-time

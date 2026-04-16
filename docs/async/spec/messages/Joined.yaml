@@ -1,0 +1,31 @@
+name: joined
+summary: Current canvas state sent after joining
+payload:
+  schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+  schema:
+    $ref: '../schemas/CanvasState.yaml'
+examples:
+  - name: joined example
+    payload:
+      snapshot:
+        version: 2
+        body:
+          className: Stage
+          attrs: { width: 1920, height: 1080 }
+          children:
+            - className: Layer
+              attrs: { id: "layer-1" }
+              children:
+                - className: Rect
+                  attrs: { id: "rect-1", x: 100, y: 100, width: 200, height: 150, fill: "#4A90D9" }
+        createdAt: "2026-04-17T10:00:00.000Z"
+      commits:
+        - number: 21
+          previous: 20
+          changes:
+            - op: add
+              parentId: "layer-1"
+              node:
+                className: Text
+                attrs: { id: "text-1", x: 50, y: 50, text: "Hello", fontSize: 24 }
+          createdAt: "2026-04-17T10:00:05.000Z"

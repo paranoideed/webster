@@ -1,0 +1,10 @@
+name: join
+summary: Join a canvas room
+payload:
+  schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+  schema:
+    $ref: '../schemas/JoinPayload.yaml'
+examples:
+  - name: join example
+    payload:
+      canvaId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"

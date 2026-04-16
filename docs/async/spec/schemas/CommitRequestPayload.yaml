@@ -1,0 +1,12 @@
+type: object
+required: [previous, changes]
+properties:
+  previous:
+    type: integer
+    description: Number of the commit this one is based on (0 if first commit)
+    example: 5
+  changes:
+    type: array
+    minItems: 1
+    items:
+      $ref: './operations/Operation.yaml'

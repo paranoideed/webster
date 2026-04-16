@@ -1,0 +1,8 @@
+type: object
+required: [op, id]
+properties:
+  op:
+    type: string
+    enum: [delete_layer]
+  id:
+    type: string

@@ -1,0 +1,9 @@
+type: object
+required: [op, props]
+properties:
+  op:
+    type: string
+    enum: [update_stage]
+  props:
+    type: object
+    additionalProperties: true

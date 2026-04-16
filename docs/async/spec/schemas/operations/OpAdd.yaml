@@ -1,0 +1,11 @@
+type: object
+required: [op, parentId, node]
+properties:
+  op:
+    type: string
+    enum: [add]
+  parentId:
+    type: string
+    description: ID of the parent layer or group
+  node:
+    $ref: '../konva/KonvaNodeConfig.yaml'

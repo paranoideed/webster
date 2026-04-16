@@ -1,0 +1,194 @@
+asyncapi: 3.0.0
+
+info:
+  title: Webster Canvas WebSocket API
+  version: 1.0.0
+  description: |
+    Real-time canvas collaboration over Socket.IO.
+
+    **Connection:** `ws://<host>/canvas`
+    **Room:** client must join room `canva:<canvaId>` after connecting.
+
+    **Auth:** JWT access token must be present in cookies (same as REST API).
+
+    **Snapshot strategy:** every `n` commits (n=10) the server computes a new snapshot
+    and pushes it to all clients in the room. The snapshot is always `n` commits behind HEAD.
+    Frontend can only undo back to the latest snapshot boundary.
+
+servers:
+  production:
+    host: localhost:3000
+    protocol: wss
+
+channels:
+  join:
+    address: join
+    description: |
+      Client joins a canvas room. Must be called before any other event.
+      Server responds with current canvas state (latest snapshot + commits after it).
+    messages:
+      joinRequest:
+        $ref: './spec/messages/Join.yaml'
+
+  joined:
+    address: joined
+    description: Server confirms join and sends current canvas state.
+    messages:
+      joinedResponse:
+        $ref: './spec/messages/Joined.yaml'
+
+  commit:
+    address: commit
+    description: |
+      Client sends a new commit (list of operations).
+      Server assigns a sequential `number`, persists it, and echoes it back to all clients in the room.
+      If `previous` does not match current HEAD the server responds with `commit:error`.
+    messages:
+      commitRequest:
+        $ref: './spec/messages/CommitRequest.yaml'
+
+  commit:ack:
+    address: commit:ack
+    description: |
+      Server broadcasts the stored commit to all clients in the room (including the sender).
+    messages:
+      commitAck:
+        $ref: './spec/messages/CommitAck.yaml'
+
+  commit:error:
+    address: commit:error
+    description: |
+      Server sends this only to the sender when a commit is rejected
+      (e.g. `previous` is stale — concurrent edit conflict).
+      Client should re-fetch state via `join` and retry.
+    messages:
+      commitError:
+        $ref: './spec/messages/CommitError.yaml'
+
+  snapshot:
+    address: snapshot
+    description: |
+      Server broadcasts a new snapshot to all clients in the room.
+      Triggered automatically when commit `number` reaches a snapshot boundary (`n`, `2n`, `3n`, …).
+    messages:
+      snapshotPush:
+        $ref: './spec/messages/Snapshot.yaml'
+
+operations:
+  joinCanvas:
+    action: send
+    channel:
+      $ref: '#/channels/join'
+
+  onJoined:
+    action: receive
+    channel:
+      $ref: '#/channels/joined'
+
+  sendCommit:
+    action: send
+    channel:
+      $ref: '#/channels/commit'
+
+  onCommitAck:
+    action: receive
+    channel:
+      $ref: '#/channels/commit:ack'
+
+  onCommitError:
+    action: receive
+    channel:
+      $ref: '#/channels/commit:error'
+
+  onSnapshot:
+    action: receive
+    channel:
+      $ref: '#/channels/snapshot'
+
+components:
+  schemas:
+    # canvas state
+    CanvasState:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/CanvasState.yaml'
+    Snapshot:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/Snapshot.yaml'
+    Commit:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/Commit.yaml'
+    CommitError:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/CommitError.yaml'
+    CommitRequestPayload:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/CommitRequestPayload.yaml'
+    JoinPayload:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/JoinPayload.yaml'
+
+    # operations
+    Operation:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/operations/Operation.yaml'
+    OpAdd:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/operations/OpAdd.yaml'
+    OpUpdate:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/operations/OpUpdate.yaml'
+    OpDelete:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/operations/OpDelete.yaml'
+    OpReorder:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/operations/OpReorder.yaml'
+    OpMoveToLayer:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/operations/OpMoveToLayer.yaml'
+    OpAddLayer:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/operations/OpAddLayer.yaml'
+    OpUpdateLayer:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/operations/OpUpdateLayer.yaml'
+    OpDeleteLayer:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/operations/OpDeleteLayer.yaml'
+    OpReorderLayer:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/operations/OpReorderLayer.yaml'
+    OpUpdateStage:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/operations/OpUpdateStage.yaml'
+
+    # konva
+    KonvaStageConfig:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/konva/KonvaStageConfig.yaml'
+    KonvaLayerConfig:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/konva/KonvaLayerConfig.yaml'
+    KonvaNodeConfig:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/konva/KonvaNodeConfig.yaml'

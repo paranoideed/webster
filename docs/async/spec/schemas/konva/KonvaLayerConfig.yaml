@@ -1,0 +1,17 @@
+type: object
+required: [className, attrs, children]
+properties:
+  className:
+    type: string
+    enum: [Layer]
+  attrs:
+    type: object
+    required: [id]
+    properties:
+      id:
+        type: string
+    additionalProperties: true
+  children:
+    type: array
+    items:
+      $ref: './KonvaNodeConfig.yaml'

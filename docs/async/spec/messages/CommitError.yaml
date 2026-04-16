@@ -1,0 +1,11 @@
+name: commit:error
+summary: Commit rejection sent only to the sender
+payload:
+  schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+  schema:
+    $ref: '../schemas/CommitError.yaml'
+examples:
+  - name: stale previous
+    payload:
+      code: STALE_PREVIOUS
+      message: "Commit rejected: previous=3 but current HEAD=5"

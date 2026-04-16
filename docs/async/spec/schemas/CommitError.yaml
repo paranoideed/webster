@@ -1,0 +1,10 @@
+type: object
+required: [code, message]
+properties:
+  code:
+    type: string
+    enum: [STALE_PREVIOUS, UNAUTHORIZED, NOT_FOUND]
+    example: STALE_PREVIOUS
+  message:
+    type: string
+    example: "Commit rejected: previous=3 but current HEAD=5"

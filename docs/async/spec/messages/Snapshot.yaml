@@ -1,0 +1,31 @@
+name: snapshot
+summary: New snapshot broadcast when a boundary commit is reached
+payload:
+  schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+  schema:
+    $ref: '../schemas/CanvasState.yaml'
+examples:
+  - name: snapshot example
+    payload:
+      snapshot:
+        version: 3
+        body:
+          className: Stage
+          attrs: { width: 1920, height: 1080 }
+          children:
+            - className: Layer
+              attrs: { id: "layer-1" }
+              children:
+                - className: Rect
+                  attrs: { id: "rect-1", x: 100, y: 100, width: 200, height: 150, fill: "#4A90D9" }
+                - className: Text
+                  attrs: { id: "text-1", x: 50, y: 50, text: "Hello", fontSize: 24 }
+        createdAt: "2026-04-17T10:05:00.000Z"
+      commits:
+        - number: 31
+          previous: 30
+          changes:
+            - op: update
+              id: "rect-1"
+              props: { fill: "#9B59B6" }
+          createdAt: "2026-04-17T10:05:02.000Z"

@@ -1,0 +1,2661 @@
+asyncapi: 3.0.0
+info:
+  title: Webster Canvas WebSocket API
+  version: 1.0.0
+  description: >
+    Real-time canvas collaboration over Socket.IO.
+
+
+    **Connection:** `ws://<host>/canvas`
+
+    **Room:** client must join room `canva:<canvaId>` after connecting.
+
+
+    **Auth:** JWT access token must be present in cookies (same as REST API).
+
+
+    **Snapshot strategy:** every `n` commits (n=10) the server computes a new
+    snapshot
+
+    and pushes it to all clients in the room. The snapshot is always `n` commits
+    behind HEAD.
+
+    Frontend can only undo back to the latest snapshot boundary.
+servers:
+  production:
+    host: localhost:3000
+    protocol: wss
+channels:
+  join:
+    address: join
+    description: >
+      Client joins a canvas room. Must be called before any other event.
+
+      Server responds with current canvas state (latest snapshot + commits after
+      it).
+    messages:
+      joinRequest:
+        name: join
+        summary: Join a canvas room
+        payload:
+          schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+          schema:
+            type: object
+            required:
+              - canvaId
+            properties:
+              canvaId:
+                type: string
+                format: uuid
+                example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        examples:
+          - name: join example
+            payload:
+              canvaId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+  joined:
+    address: joined
+    description: Server confirms join and sends current canvas state.
+    messages:
+      joinedResponse:
+        name: joined
+        summary: Current canvas state sent after joining
+        payload:
+          schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+          schema:
+            type: object
+            required:
+              - snapshot
+              - commits
+            properties:
+              snapshot:
+                type: object
+                required:
+                  - version
+                  - body
+                  - createdAt
+                properties:
+                  version:
+                    type: integer
+                    description: Snapshot version index (0, 1, 2, …)
+                    example: 2
+                  body:
+                    type: object
+                    required:
+                      - className
+                      - attrs
+                      - children
+                    properties:
+                      className:
+                        type: string
+                        enum:
+                          - Stage
+                      attrs:
+                        type: object
+                        additionalProperties: true
+                      children:
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - className
+                            - attrs
+                            - children
+                          properties:
+                            className:
+                              type: string
+                              enum:
+                                - Layer
+                            attrs:
+                              type: object
+                              required:
+                                - id
+                              properties:
+                                id:
+                                  type: string
+                              additionalProperties: true
+                            children:
+                              type: array
+                              items:
+                                type: object
+                                required:
+                                  - className
+                                  - attrs
+                                properties:
+                                  className:
+                                    type: string
+                                    example: Rect
+                                  attrs:
+                                    type: object
+                                    required:
+                                      - id
+                                    properties:
+                                      id:
+                                        type: string
+                                    additionalProperties: true
+                                  children:
+                                    type: array
+                                    items:
+                                      type: object
+                  createdAt:
+                    type: string
+                    format: date-time
+              commits:
+                type: array
+                description: Commits after the snapshot (up to n commits)
+                items:
+                  type: object
+                  required:
+                    - number
+                    - previous
+                    - changes
+                  properties:
+                    number:
+                      type: integer
+                      example: 6
+                    previous:
+                      type: integer
+                      example: 5
+                    changes:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: object
+                            required:
+                              - op
+                              - parentId
+                              - node
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - add
+                              parentId:
+                                type: string
+                                description: ID of the parent layer or group
+                              node:
+                                type: object
+                                required:
+                                  - className
+                                  - attrs
+                                properties:
+                                  className:
+                                    type: string
+                                    example: Rect
+                                  attrs:
+                                    type: object
+                                    required:
+                                      - id
+                                    properties:
+                                      id:
+                                        type: string
+                                    additionalProperties: true
+                                  children:
+                                    type: array
+                                    items:
+                                      type: object
+                          - type: object
+                            required:
+                              - op
+                              - id
+                              - props
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - update
+                              id:
+                                type: string
+                              props:
+                                type: object
+                                additionalProperties: true
+                          - type: object
+                            required:
+                              - op
+                              - id
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - delete
+                              id:
+                                type: string
+                          - type: object
+                            required:
+                              - op
+                              - id
+                              - newIndex
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - reorder
+                              id:
+                                type: string
+                              newIndex:
+                                type: integer
+                          - type: object
+                            required:
+                              - op
+                              - id
+                              - layerId
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - move_to_layer
+                              id:
+                                type: string
+                              layerId:
+                                type: string
+                          - type: object
+                            required:
+                              - op
+                              - layer
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - add_layer
+                              layer:
+                                type: object
+                                required:
+                                  - className
+                                  - attrs
+                                  - children
+                                properties:
+                                  className:
+                                    type: string
+                                    enum:
+                                      - Layer
+                                  attrs:
+                                    type: object
+                                    required:
+                                      - id
+                                    properties:
+                                      id:
+                                        type: string
+                                    additionalProperties: true
+                                  children:
+                                    type: array
+                                    items:
+                                      type: object
+                                      required:
+                                        - className
+                                        - attrs
+                                      properties:
+                                        className:
+                                          type: string
+                                          example: Rect
+                                        attrs:
+                                          type: object
+                                          required:
+                                            - id
+                                          properties:
+                                            id:
+                                              type: string
+                                          additionalProperties: true
+                                        children:
+                                          type: array
+                                          items:
+                                            type: object
+                          - type: object
+                            required:
+                              - op
+                              - id
+                              - props
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - update_layer
+                              id:
+                                type: string
+                              props:
+                                type: object
+                                additionalProperties: true
+                          - type: object
+                            required:
+                              - op
+                              - id
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - delete_layer
+                              id:
+                                type: string
+                          - type: object
+                            required:
+                              - op
+                              - id
+                              - newIndex
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - reorder_layer
+                              id:
+                                type: string
+                              newIndex:
+                                type: integer
+                          - type: object
+                            required:
+                              - op
+                              - props
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - update_stage
+                              props:
+                                type: object
+                                additionalProperties: true
+                        discriminator: op
+                    createdAt:
+                      type: string
+                      format: date-time
+        examples:
+          - name: joined example
+            payload:
+              snapshot:
+                version: 2
+                body:
+                  className: Stage
+                  attrs:
+                    width: 1920
+                    height: 1080
+                  children:
+                    - className: Layer
+                      attrs:
+                        id: layer-1
+                      children:
+                        - className: Rect
+                          attrs:
+                            id: rect-1
+                            x: 100
+                            'y': 100
+                            width: 200
+                            height: 150
+                            fill: '#4A90D9'
+                createdAt: '2026-04-17T10:00:00.000Z'
+              commits:
+                - number: 21
+                  previous: 20
+                  changes:
+                    - op: add
+                      parentId: layer-1
+                      node:
+                        className: Text
+                        attrs:
+                          id: text-1
+                          x: 50
+                          'y': 50
+                          text: Hello
+                          fontSize: 24
+                  createdAt: '2026-04-17T10:00:05.000Z'
+  commit:
+    address: commit
+    description: >
+      Client sends a new commit (list of operations).
+
+      Server assigns a sequential `number`, persists it, and echoes it back to
+      all clients in the room.
+
+      If `previous` does not match current HEAD the server responds with
+      `commit:error`.
+    messages:
+      commitRequest:
+        name: commit
+        summary: New commit from client
+        payload:
+          schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+          schema:
+            type: object
+            required:
+              - previous
+              - changes
+            properties:
+              previous:
+                type: integer
+                description: Number of the commit this one is based on (0 if first commit)
+                example: 5
+              changes:
+                type: array
+                minItems: 1
+                items:
+                  oneOf:
+                    - type: object
+                      required:
+                        - op
+                        - parentId
+                        - node
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - add
+                        parentId:
+                          type: string
+                          description: ID of the parent layer or group
+                        node:
+                          type: object
+                          required:
+                            - className
+                            - attrs
+                          properties:
+                            className:
+                              type: string
+                              example: Rect
+                            attrs:
+                              type: object
+                              required:
+                                - id
+                              properties:
+                                id:
+                                  type: string
+                              additionalProperties: true
+                            children:
+                              type: array
+                              items:
+                                type: object
+                    - type: object
+                      required:
+                        - op
+                        - id
+                        - props
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - update
+                        id:
+                          type: string
+                        props:
+                          type: object
+                          additionalProperties: true
+                    - type: object
+                      required:
+                        - op
+                        - id
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - delete
+                        id:
+                          type: string
+                    - type: object
+                      required:
+                        - op
+                        - id
+                        - newIndex
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - reorder
+                        id:
+                          type: string
+                        newIndex:
+                          type: integer
+                    - type: object
+                      required:
+                        - op
+                        - id
+                        - layerId
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - move_to_layer
+                        id:
+                          type: string
+                        layerId:
+                          type: string
+                    - type: object
+                      required:
+                        - op
+                        - layer
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - add_layer
+                        layer:
+                          type: object
+                          required:
+                            - className
+                            - attrs
+                            - children
+                          properties:
+                            className:
+                              type: string
+                              enum:
+                                - Layer
+                            attrs:
+                              type: object
+                              required:
+                                - id
+                              properties:
+                                id:
+                                  type: string
+                              additionalProperties: true
+                            children:
+                              type: array
+                              items:
+                                type: object
+                                required:
+                                  - className
+                                  - attrs
+                                properties:
+                                  className:
+                                    type: string
+                                    example: Rect
+                                  attrs:
+                                    type: object
+                                    required:
+                                      - id
+                                    properties:
+                                      id:
+                                        type: string
+                                    additionalProperties: true
+                                  children:
+                                    type: array
+                                    items:
+                                      type: object
+                    - type: object
+                      required:
+                        - op
+                        - id
+                        - props
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - update_layer
+                        id:
+                          type: string
+                        props:
+                          type: object
+                          additionalProperties: true
+                    - type: object
+                      required:
+                        - op
+                        - id
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - delete_layer
+                        id:
+                          type: string
+                    - type: object
+                      required:
+                        - op
+                        - id
+                        - newIndex
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - reorder_layer
+                        id:
+                          type: string
+                        newIndex:
+                          type: integer
+                    - type: object
+                      required:
+                        - op
+                        - props
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - update_stage
+                        props:
+                          type: object
+                          additionalProperties: true
+                  discriminator: op
+        examples:
+          - name: add node
+            payload:
+              previous: 5
+              changes:
+                - op: add
+                  parentId: layer-1
+                  node:
+                    className: Rect
+                    attrs:
+                      id: rect-2
+                      x: 300
+                      'y': 200
+                      width: 120
+                      height: 80
+                      fill: '#E74C3C'
+          - name: update node
+            payload:
+              previous: 6
+              changes:
+                - op: update
+                  id: rect-2
+                  props:
+                    fill: '#2ECC71'
+                    width: 150
+          - name: delete node
+            payload:
+              previous: 7
+              changes:
+                - op: delete
+                  id: rect-2
+  commit:ack:
+    address: commit:ack
+    description: >
+      Server broadcasts the stored commit to all clients in the room (including
+      the sender).
+    messages:
+      commitAck:
+        name: commit:ack
+        summary: Confirmed commit broadcast to all room members
+        payload:
+          schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+          schema:
+            type: object
+            required:
+              - number
+              - previous
+              - changes
+            properties:
+              number:
+                type: integer
+                example: 6
+              previous:
+                type: integer
+                example: 5
+              changes:
+                type: array
+                items:
+                  oneOf:
+                    - type: object
+                      required:
+                        - op
+                        - parentId
+                        - node
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - add
+                        parentId:
+                          type: string
+                          description: ID of the parent layer or group
+                        node:
+                          type: object
+                          required:
+                            - className
+                            - attrs
+                          properties:
+                            className:
+                              type: string
+                              example: Rect
+                            attrs:
+                              type: object
+                              required:
+                                - id
+                              properties:
+                                id:
+                                  type: string
+                              additionalProperties: true
+                            children:
+                              type: array
+                              items:
+                                type: object
+                    - type: object
+                      required:
+                        - op
+                        - id
+                        - props
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - update
+                        id:
+                          type: string
+                        props:
+                          type: object
+                          additionalProperties: true
+                    - type: object
+                      required:
+                        - op
+                        - id
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - delete
+                        id:
+                          type: string
+                    - type: object
+                      required:
+                        - op
+                        - id
+                        - newIndex
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - reorder
+                        id:
+                          type: string
+                        newIndex:
+                          type: integer
+                    - type: object
+                      required:
+                        - op
+                        - id
+                        - layerId
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - move_to_layer
+                        id:
+                          type: string
+                        layerId:
+                          type: string
+                    - type: object
+                      required:
+                        - op
+                        - layer
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - add_layer
+                        layer:
+                          type: object
+                          required:
+                            - className
+                            - attrs
+                            - children
+                          properties:
+                            className:
+                              type: string
+                              enum:
+                                - Layer
+                            attrs:
+                              type: object
+                              required:
+                                - id
+                              properties:
+                                id:
+                                  type: string
+                              additionalProperties: true
+                            children:
+                              type: array
+                              items:
+                                type: object
+                                required:
+                                  - className
+                                  - attrs
+                                properties:
+                                  className:
+                                    type: string
+                                    example: Rect
+                                  attrs:
+                                    type: object
+                                    required:
+                                      - id
+                                    properties:
+                                      id:
+                                        type: string
+                                    additionalProperties: true
+                                  children:
+                                    type: array
+                                    items:
+                                      type: object
+                    - type: object
+                      required:
+                        - op
+                        - id
+                        - props
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - update_layer
+                        id:
+                          type: string
+                        props:
+                          type: object
+                          additionalProperties: true
+                    - type: object
+                      required:
+                        - op
+                        - id
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - delete_layer
+                        id:
+                          type: string
+                    - type: object
+                      required:
+                        - op
+                        - id
+                        - newIndex
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - reorder_layer
+                        id:
+                          type: string
+                        newIndex:
+                          type: integer
+                    - type: object
+                      required:
+                        - op
+                        - props
+                      properties:
+                        op:
+                          type: string
+                          enum:
+                            - update_stage
+                        props:
+                          type: object
+                          additionalProperties: true
+                  discriminator: op
+              createdAt:
+                type: string
+                format: date-time
+        examples:
+          - name: commit:ack example
+            payload:
+              number: 6
+              previous: 5
+              changes:
+                - op: add
+                  parentId: layer-1
+                  node:
+                    className: Rect
+                    attrs:
+                      id: rect-2
+                      x: 300
+                      'y': 200
+                      width: 120
+                      height: 80
+                      fill: '#E74C3C'
+              createdAt: '2026-04-17T10:01:00.000Z'
+  commit:error:
+    address: commit:error
+    description: |
+      Server sends this only to the sender when a commit is rejected
+      (e.g. `previous` is stale — concurrent edit conflict).
+      Client should re-fetch state via `join` and retry.
+    messages:
+      commitError:
+        name: commit:error
+        summary: Commit rejection sent only to the sender
+        payload:
+          schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+          schema:
+            type: object
+            required:
+              - code
+              - message
+            properties:
+              code:
+                type: string
+                enum:
+                  - STALE_PREVIOUS
+                  - UNAUTHORIZED
+                  - NOT_FOUND
+                example: STALE_PREVIOUS
+              message:
+                type: string
+                example: 'Commit rejected: previous=3 but current HEAD=5'
+        examples:
+          - name: stale previous
+            payload:
+              code: STALE_PREVIOUS
+              message: 'Commit rejected: previous=3 but current HEAD=5'
+  snapshot:
+    address: snapshot
+    description: >
+      Server broadcasts a new snapshot to all clients in the room.
+
+      Triggered automatically when commit `number` reaches a snapshot boundary
+      (`n`, `2n`, `3n`, …).
+    messages:
+      snapshotPush:
+        name: snapshot
+        summary: New snapshot broadcast when a boundary commit is reached
+        payload:
+          schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+          schema:
+            type: object
+            required:
+              - snapshot
+              - commits
+            properties:
+              snapshot:
+                type: object
+                required:
+                  - version
+                  - body
+                  - createdAt
+                properties:
+                  version:
+                    type: integer
+                    description: Snapshot version index (0, 1, 2, …)
+                    example: 2
+                  body:
+                    type: object
+                    required:
+                      - className
+                      - attrs
+                      - children
+                    properties:
+                      className:
+                        type: string
+                        enum:
+                          - Stage
+                      attrs:
+                        type: object
+                        additionalProperties: true
+                      children:
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - className
+                            - attrs
+                            - children
+                          properties:
+                            className:
+                              type: string
+                              enum:
+                                - Layer
+                            attrs:
+                              type: object
+                              required:
+                                - id
+                              properties:
+                                id:
+                                  type: string
+                              additionalProperties: true
+                            children:
+                              type: array
+                              items:
+                                type: object
+                                required:
+                                  - className
+                                  - attrs
+                                properties:
+                                  className:
+                                    type: string
+                                    example: Rect
+                                  attrs:
+                                    type: object
+                                    required:
+                                      - id
+                                    properties:
+                                      id:
+                                        type: string
+                                    additionalProperties: true
+                                  children:
+                                    type: array
+                                    items:
+                                      type: object
+                  createdAt:
+                    type: string
+                    format: date-time
+              commits:
+                type: array
+                description: Commits after the snapshot (up to n commits)
+                items:
+                  type: object
+                  required:
+                    - number
+                    - previous
+                    - changes
+                  properties:
+                    number:
+                      type: integer
+                      example: 6
+                    previous:
+                      type: integer
+                      example: 5
+                    changes:
+                      type: array
+                      items:
+                        oneOf:
+                          - type: object
+                            required:
+                              - op
+                              - parentId
+                              - node
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - add
+                              parentId:
+                                type: string
+                                description: ID of the parent layer or group
+                              node:
+                                type: object
+                                required:
+                                  - className
+                                  - attrs
+                                properties:
+                                  className:
+                                    type: string
+                                    example: Rect
+                                  attrs:
+                                    type: object
+                                    required:
+                                      - id
+                                    properties:
+                                      id:
+                                        type: string
+                                    additionalProperties: true
+                                  children:
+                                    type: array
+                                    items:
+                                      type: object
+                          - type: object
+                            required:
+                              - op
+                              - id
+                              - props
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - update
+                              id:
+                                type: string
+                              props:
+                                type: object
+                                additionalProperties: true
+                          - type: object
+                            required:
+                              - op
+                              - id
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - delete
+                              id:
+                                type: string
+                          - type: object
+                            required:
+                              - op
+                              - id
+                              - newIndex
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - reorder
+                              id:
+                                type: string
+                              newIndex:
+                                type: integer
+                          - type: object
+                            required:
+                              - op
+                              - id
+                              - layerId
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - move_to_layer
+                              id:
+                                type: string
+                              layerId:
+                                type: string
+                          - type: object
+                            required:
+                              - op
+                              - layer
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - add_layer
+                              layer:
+                                type: object
+                                required:
+                                  - className
+                                  - attrs
+                                  - children
+                                properties:
+                                  className:
+                                    type: string
+                                    enum:
+                                      - Layer
+                                  attrs:
+                                    type: object
+                                    required:
+                                      - id
+                                    properties:
+                                      id:
+                                        type: string
+                                    additionalProperties: true
+                                  children:
+                                    type: array
+                                    items:
+                                      type: object
+                                      required:
+                                        - className
+                                        - attrs
+                                      properties:
+                                        className:
+                                          type: string
+                                          example: Rect
+                                        attrs:
+                                          type: object
+                                          required:
+                                            - id
+                                          properties:
+                                            id:
+                                              type: string
+                                          additionalProperties: true
+                                        children:
+                                          type: array
+                                          items:
+                                            type: object
+                          - type: object
+                            required:
+                              - op
+                              - id
+                              - props
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - update_layer
+                              id:
+                                type: string
+                              props:
+                                type: object
+                                additionalProperties: true
+                          - type: object
+                            required:
+                              - op
+                              - id
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - delete_layer
+                              id:
+                                type: string
+                          - type: object
+                            required:
+                              - op
+                              - id
+                              - newIndex
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - reorder_layer
+                              id:
+                                type: string
+                              newIndex:
+                                type: integer
+                          - type: object
+                            required:
+                              - op
+                              - props
+                            properties:
+                              op:
+                                type: string
+                                enum:
+                                  - update_stage
+                              props:
+                                type: object
+                                additionalProperties: true
+                        discriminator: op
+                    createdAt:
+                      type: string
+                      format: date-time
+        examples:
+          - name: snapshot example
+            payload:
+              snapshot:
+                version: 3
+                body:
+                  className: Stage
+                  attrs:
+                    width: 1920
+                    height: 1080
+                  children:
+                    - className: Layer
+                      attrs:
+                        id: layer-1
+                      children:
+                        - className: Rect
+                          attrs:
+                            id: rect-1
+                            x: 100
+                            'y': 100
+                            width: 200
+                            height: 150
+                            fill: '#4A90D9'
+                        - className: Text
+                          attrs:
+                            id: text-1
+                            x: 50
+                            'y': 50
+                            text: Hello
+                            fontSize: 24
+                createdAt: '2026-04-17T10:05:00.000Z'
+              commits:
+                - number: 31
+                  previous: 30
+                  changes:
+                    - op: update
+                      id: rect-1
+                      props:
+                        fill: '#9B59B6'
+                  createdAt: '2026-04-17T10:05:02.000Z'
+operations:
+  joinCanvas:
+    action: send
+    channel:
+      $ref: '#/channels/join'
+  onJoined:
+    action: receive
+    channel:
+      $ref: '#/channels/joined'
+  sendCommit:
+    action: send
+    channel:
+      $ref: '#/channels/commit'
+  onCommitAck:
+    action: receive
+    channel:
+      $ref: '#/channels/commit:ack'
+  onCommitError:
+    action: receive
+    channel:
+      $ref: '#/channels/commit:error'
+  onSnapshot:
+    action: receive
+    channel:
+      $ref: '#/channels/snapshot'
+components:
+  schemas:
+    CanvasState:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - snapshot
+          - commits
+        properties:
+          snapshot:
+            type: object
+            required:
+              - version
+              - body
+              - createdAt
+            properties:
+              version:
+                type: integer
+                description: Snapshot version index (0, 1, 2, …)
+                example: 2
+              body:
+                type: object
+                required:
+                  - className
+                  - attrs
+                  - children
+                properties:
+                  className:
+                    type: string
+                    enum:
+                      - Stage
+                  attrs:
+                    type: object
+                    additionalProperties: true
+                  children:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - className
+                        - attrs
+                        - children
+                      properties:
+                        className:
+                          type: string
+                          enum:
+                            - Layer
+                        attrs:
+                          type: object
+                          required:
+                            - id
+                          properties:
+                            id:
+                              type: string
+                          additionalProperties: true
+                        children:
+                          type: array
+                          items:
+                            type: object
+                            required:
+                              - className
+                              - attrs
+                            properties:
+                              className:
+                                type: string
+                                example: Rect
+                              attrs:
+                                type: object
+                                required:
+                                  - id
+                                properties:
+                                  id:
+                                    type: string
+                                additionalProperties: true
+                              children:
+                                type: array
+                                items:
+                                  type: object
+              createdAt:
+                type: string
+                format: date-time
+          commits:
+            type: array
+            description: Commits after the snapshot (up to n commits)
+            items:
+              type: object
+              required:
+                - number
+                - previous
+                - changes
+              properties:
+                number:
+                  type: integer
+                  example: 6
+                previous:
+                  type: integer
+                  example: 5
+                changes:
+                  type: array
+                  items:
+                    oneOf:
+                      - type: object
+                        required:
+                          - op
+                          - parentId
+                          - node
+                        properties:
+                          op:
+                            type: string
+                            enum:
+                              - add
+                          parentId:
+                            type: string
+                            description: ID of the parent layer or group
+                          node:
+                            type: object
+                            required:
+                              - className
+                              - attrs
+                            properties:
+                              className:
+                                type: string
+                                example: Rect
+                              attrs:
+                                type: object
+                                required:
+                                  - id
+                                properties:
+                                  id:
+                                    type: string
+                                additionalProperties: true
+                              children:
+                                type: array
+                                items:
+                                  type: object
+                      - type: object
+                        required:
+                          - op
+                          - id
+                          - props
+                        properties:
+                          op:
+                            type: string
+                            enum:
+                              - update
+                          id:
+                            type: string
+                          props:
+                            type: object
+                            additionalProperties: true
+                      - type: object
+                        required:
+                          - op
+                          - id
+                        properties:
+                          op:
+                            type: string
+                            enum:
+                              - delete
+                          id:
+                            type: string
+                      - type: object
+                        required:
+                          - op
+                          - id
+                          - newIndex
+                        properties:
+                          op:
+                            type: string
+                            enum:
+                              - reorder
+                          id:
+                            type: string
+                          newIndex:
+                            type: integer
+                      - type: object
+                        required:
+                          - op
+                          - id
+                          - layerId
+                        properties:
+                          op:
+                            type: string
+                            enum:
+                              - move_to_layer
+                          id:
+                            type: string
+                          layerId:
+                            type: string
+                      - type: object
+                        required:
+                          - op
+                          - layer
+                        properties:
+                          op:
+                            type: string
+                            enum:
+                              - add_layer
+                          layer:
+                            type: object
+                            required:
+                              - className
+                              - attrs
+                              - children
+                            properties:
+                              className:
+                                type: string
+                                enum:
+                                  - Layer
+                              attrs:
+                                type: object
+                                required:
+                                  - id
+                                properties:
+                                  id:
+                                    type: string
+                                additionalProperties: true
+                              children:
+                                type: array
+                                items:
+                                  type: object
+                                  required:
+                                    - className
+                                    - attrs
+                                  properties:
+                                    className:
+                                      type: string
+                                      example: Rect
+                                    attrs:
+                                      type: object
+                                      required:
+                                        - id
+                                      properties:
+                                        id:
+                                          type: string
+                                      additionalProperties: true
+                                    children:
+                                      type: array
+                                      items:
+                                        type: object
+                      - type: object
+                        required:
+                          - op
+                          - id
+                          - props
+                        properties:
+                          op:
+                            type: string
+                            enum:
+                              - update_layer
+                          id:
+                            type: string
+                          props:
+                            type: object
+                            additionalProperties: true
+                      - type: object
+                        required:
+                          - op
+                          - id
+                        properties:
+                          op:
+                            type: string
+                            enum:
+                              - delete_layer
+                          id:
+                            type: string
+                      - type: object
+                        required:
+                          - op
+                          - id
+                          - newIndex
+                        properties:
+                          op:
+                            type: string
+                            enum:
+                              - reorder_layer
+                          id:
+                            type: string
+                          newIndex:
+                            type: integer
+                      - type: object
+                        required:
+                          - op
+                          - props
+                        properties:
+                          op:
+                            type: string
+                            enum:
+                              - update_stage
+                          props:
+                            type: object
+                            additionalProperties: true
+                    discriminator: op
+                createdAt:
+                  type: string
+                  format: date-time
+    Snapshot:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - version
+          - body
+          - createdAt
+        properties:
+          version:
+            type: integer
+            description: Snapshot version index (0, 1, 2, …)
+            example: 2
+          body:
+            type: object
+            required:
+              - className
+              - attrs
+              - children
+            properties:
+              className:
+                type: string
+                enum:
+                  - Stage
+              attrs:
+                type: object
+                additionalProperties: true
+              children:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - className
+                    - attrs
+                    - children
+                  properties:
+                    className:
+                      type: string
+                      enum:
+                        - Layer
+                    attrs:
+                      type: object
+                      required:
+                        - id
+                      properties:
+                        id:
+                          type: string
+                      additionalProperties: true
+                    children:
+                      type: array
+                      items:
+                        type: object
+                        required:
+                          - className
+                          - attrs
+                        properties:
+                          className:
+                            type: string
+                            example: Rect
+                          attrs:
+                            type: object
+                            required:
+                              - id
+                            properties:
+                              id:
+                                type: string
+                            additionalProperties: true
+                          children:
+                            type: array
+                            items:
+                              type: object
+          createdAt:
+            type: string
+            format: date-time
+    Commit:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - number
+          - previous
+          - changes
+        properties:
+          number:
+            type: integer
+            example: 6
+          previous:
+            type: integer
+            example: 5
+          changes:
+            type: array
+            items:
+              oneOf:
+                - type: object
+                  required:
+                    - op
+                    - parentId
+                    - node
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - add
+                    parentId:
+                      type: string
+                      description: ID of the parent layer or group
+                    node:
+                      type: object
+                      required:
+                        - className
+                        - attrs
+                      properties:
+                        className:
+                          type: string
+                          example: Rect
+                        attrs:
+                          type: object
+                          required:
+                            - id
+                          properties:
+                            id:
+                              type: string
+                          additionalProperties: true
+                        children:
+                          type: array
+                          items:
+                            type: object
+                - type: object
+                  required:
+                    - op
+                    - id
+                    - props
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - update
+                    id:
+                      type: string
+                    props:
+                      type: object
+                      additionalProperties: true
+                - type: object
+                  required:
+                    - op
+                    - id
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - delete
+                    id:
+                      type: string
+                - type: object
+                  required:
+                    - op
+                    - id
+                    - newIndex
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - reorder
+                    id:
+                      type: string
+                    newIndex:
+                      type: integer
+                - type: object
+                  required:
+                    - op
+                    - id
+                    - layerId
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - move_to_layer
+                    id:
+                      type: string
+                    layerId:
+                      type: string
+                - type: object
+                  required:
+                    - op
+                    - layer
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - add_layer
+                    layer:
+                      type: object
+                      required:
+                        - className
+                        - attrs
+                        - children
+                      properties:
+                        className:
+                          type: string
+                          enum:
+                            - Layer
+                        attrs:
+                          type: object
+                          required:
+                            - id
+                          properties:
+                            id:
+                              type: string
+                          additionalProperties: true
+                        children:
+                          type: array
+                          items:
+                            type: object
+                            required:
+                              - className
+                              - attrs
+                            properties:
+                              className:
+                                type: string
+                                example: Rect
+                              attrs:
+                                type: object
+                                required:
+                                  - id
+                                properties:
+                                  id:
+                                    type: string
+                                additionalProperties: true
+                              children:
+                                type: array
+                                items:
+                                  type: object
+                - type: object
+                  required:
+                    - op
+                    - id
+                    - props
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - update_layer
+                    id:
+                      type: string
+                    props:
+                      type: object
+                      additionalProperties: true
+                - type: object
+                  required:
+                    - op
+                    - id
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - delete_layer
+                    id:
+                      type: string
+                - type: object
+                  required:
+                    - op
+                    - id
+                    - newIndex
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - reorder_layer
+                    id:
+                      type: string
+                    newIndex:
+                      type: integer
+                - type: object
+                  required:
+                    - op
+                    - props
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - update_stage
+                    props:
+                      type: object
+                      additionalProperties: true
+              discriminator: op
+          createdAt:
+            type: string
+            format: date-time
+    CommitError:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - code
+          - message
+        properties:
+          code:
+            type: string
+            enum:
+              - STALE_PREVIOUS
+              - UNAUTHORIZED
+              - NOT_FOUND
+            example: STALE_PREVIOUS
+          message:
+            type: string
+            example: 'Commit rejected: previous=3 but current HEAD=5'
+    CommitRequestPayload:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - previous
+          - changes
+        properties:
+          previous:
+            type: integer
+            description: Number of the commit this one is based on (0 if first commit)
+            example: 5
+          changes:
+            type: array
+            minItems: 1
+            items:
+              oneOf:
+                - type: object
+                  required:
+                    - op
+                    - parentId
+                    - node
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - add
+                    parentId:
+                      type: string
+                      description: ID of the parent layer or group
+                    node:
+                      type: object
+                      required:
+                        - className
+                        - attrs
+                      properties:
+                        className:
+                          type: string
+                          example: Rect
+                        attrs:
+                          type: object
+                          required:
+                            - id
+                          properties:
+                            id:
+                              type: string
+                          additionalProperties: true
+                        children:
+                          type: array
+                          items:
+                            type: object
+                - type: object
+                  required:
+                    - op
+                    - id
+                    - props
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - update
+                    id:
+                      type: string
+                    props:
+                      type: object
+                      additionalProperties: true
+                - type: object
+                  required:
+                    - op
+                    - id
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - delete
+                    id:
+                      type: string
+                - type: object
+                  required:
+                    - op
+                    - id
+                    - newIndex
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - reorder
+                    id:
+                      type: string
+                    newIndex:
+                      type: integer
+                - type: object
+                  required:
+                    - op
+                    - id
+                    - layerId
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - move_to_layer
+                    id:
+                      type: string
+                    layerId:
+                      type: string
+                - type: object
+                  required:
+                    - op
+                    - layer
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - add_layer
+                    layer:
+                      type: object
+                      required:
+                        - className
+                        - attrs
+                        - children
+                      properties:
+                        className:
+                          type: string
+                          enum:
+                            - Layer
+                        attrs:
+                          type: object
+                          required:
+                            - id
+                          properties:
+                            id:
+                              type: string
+                          additionalProperties: true
+                        children:
+                          type: array
+                          items:
+                            type: object
+                            required:
+                              - className
+                              - attrs
+                            properties:
+                              className:
+                                type: string
+                                example: Rect
+                              attrs:
+                                type: object
+                                required:
+                                  - id
+                                properties:
+                                  id:
+                                    type: string
+                                additionalProperties: true
+                              children:
+                                type: array
+                                items:
+                                  type: object
+                - type: object
+                  required:
+                    - op
+                    - id
+                    - props
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - update_layer
+                    id:
+                      type: string
+                    props:
+                      type: object
+                      additionalProperties: true
+                - type: object
+                  required:
+                    - op
+                    - id
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - delete_layer
+                    id:
+                      type: string
+                - type: object
+                  required:
+                    - op
+                    - id
+                    - newIndex
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - reorder_layer
+                    id:
+                      type: string
+                    newIndex:
+                      type: integer
+                - type: object
+                  required:
+                    - op
+                    - props
+                  properties:
+                    op:
+                      type: string
+                      enum:
+                        - update_stage
+                    props:
+                      type: object
+                      additionalProperties: true
+              discriminator: op
+    JoinPayload:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - canvaId
+        properties:
+          canvaId:
+            type: string
+            format: uuid
+            example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+    Operation:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        oneOf:
+          - type: object
+            required:
+              - op
+              - parentId
+              - node
+            properties:
+              op:
+                type: string
+                enum:
+                  - add
+              parentId:
+                type: string
+                description: ID of the parent layer or group
+              node:
+                type: object
+                required:
+                  - className
+                  - attrs
+                properties:
+                  className:
+                    type: string
+                    example: Rect
+                  attrs:
+                    type: object
+                    required:
+                      - id
+                    properties:
+                      id:
+                        type: string
+                    additionalProperties: true
+                  children:
+                    type: array
+                    items:
+                      type: object
+          - type: object
+            required:
+              - op
+              - id
+              - props
+            properties:
+              op:
+                type: string
+                enum:
+                  - update
+              id:
+                type: string
+              props:
+                type: object
+                additionalProperties: true
+          - type: object
+            required:
+              - op
+              - id
+            properties:
+              op:
+                type: string
+                enum:
+                  - delete
+              id:
+                type: string
+          - type: object
+            required:
+              - op
+              - id
+              - newIndex
+            properties:
+              op:
+                type: string
+                enum:
+                  - reorder
+              id:
+                type: string
+              newIndex:
+                type: integer
+          - type: object
+            required:
+              - op
+              - id
+              - layerId
+            properties:
+              op:
+                type: string
+                enum:
+                  - move_to_layer
+              id:
+                type: string
+              layerId:
+                type: string
+          - type: object
+            required:
+              - op
+              - layer
+            properties:
+              op:
+                type: string
+                enum:
+                  - add_layer
+              layer:
+                type: object
+                required:
+                  - className
+                  - attrs
+                  - children
+                properties:
+                  className:
+                    type: string
+                    enum:
+                      - Layer
+                  attrs:
+                    type: object
+                    required:
+                      - id
+                    properties:
+                      id:
+                        type: string
+                    additionalProperties: true
+                  children:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - className
+                        - attrs
+                      properties:
+                        className:
+                          type: string
+                          example: Rect
+                        attrs:
+                          type: object
+                          required:
+                            - id
+                          properties:
+                            id:
+                              type: string
+                          additionalProperties: true
+                        children:
+                          type: array
+                          items:
+                            type: object
+          - type: object
+            required:
+              - op
+              - id
+              - props
+            properties:
+              op:
+                type: string
+                enum:
+                  - update_layer
+              id:
+                type: string
+              props:
+                type: object
+                additionalProperties: true
+          - type: object
+            required:
+              - op
+              - id
+            properties:
+              op:
+                type: string
+                enum:
+                  - delete_layer
+              id:
+                type: string
+          - type: object
+            required:
+              - op
+              - id
+              - newIndex
+            properties:
+              op:
+                type: string
+                enum:
+                  - reorder_layer
+              id:
+                type: string
+              newIndex:
+                type: integer
+          - type: object
+            required:
+              - op
+              - props
+            properties:
+              op:
+                type: string
+                enum:
+                  - update_stage
+              props:
+                type: object
+                additionalProperties: true
+        discriminator: op
+    OpAdd:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - op
+          - parentId
+          - node
+        properties:
+          op:
+            type: string
+            enum:
+              - add
+          parentId:
+            type: string
+            description: ID of the parent layer or group
+          node:
+            type: object
+            required:
+              - className
+              - attrs
+            properties:
+              className:
+                type: string
+                example: Rect
+              attrs:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                additionalProperties: true
+              children:
+                type: array
+                items:
+                  type: object
+    OpUpdate:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - op
+          - id
+          - props
+        properties:
+          op:
+            type: string
+            enum:
+              - update
+          id:
+            type: string
+          props:
+            type: object
+            additionalProperties: true
+    OpDelete:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - op
+          - id
+        properties:
+          op:
+            type: string
+            enum:
+              - delete
+          id:
+            type: string
+    OpReorder:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - op
+          - id
+          - newIndex
+        properties:
+          op:
+            type: string
+            enum:
+              - reorder
+          id:
+            type: string
+          newIndex:
+            type: integer
+    OpMoveToLayer:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - op
+          - id
+          - layerId
+        properties:
+          op:
+            type: string
+            enum:
+              - move_to_layer
+          id:
+            type: string
+          layerId:
+            type: string
+    OpAddLayer:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - op
+          - layer
+        properties:
+          op:
+            type: string
+            enum:
+              - add_layer
+          layer:
+            type: object
+            required:
+              - className
+              - attrs
+              - children
+            properties:
+              className:
+                type: string
+                enum:
+                  - Layer
+              attrs:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                additionalProperties: true
+              children:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - className
+                    - attrs
+                  properties:
+                    className:
+                      type: string
+                      example: Rect
+                    attrs:
+                      type: object
+                      required:
+                        - id
+                      properties:
+                        id:
+                          type: string
+                      additionalProperties: true
+                    children:
+                      type: array
+                      items:
+                        type: object
+    OpUpdateLayer:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - op
+          - id
+          - props
+        properties:
+          op:
+            type: string
+            enum:
+              - update_layer
+          id:
+            type: string
+          props:
+            type: object
+            additionalProperties: true
+    OpDeleteLayer:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - op
+          - id
+        properties:
+          op:
+            type: string
+            enum:
+              - delete_layer
+          id:
+            type: string
+    OpReorderLayer:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - op
+          - id
+          - newIndex
+        properties:
+          op:
+            type: string
+            enum:
+              - reorder_layer
+          id:
+            type: string
+          newIndex:
+            type: integer
+    OpUpdateStage:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - op
+          - props
+        properties:
+          op:
+            type: string
+            enum:
+              - update_stage
+          props:
+            type: object
+            additionalProperties: true
+    KonvaStageConfig:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - className
+          - attrs
+          - children
+        properties:
+          className:
+            type: string
+            enum:
+              - Stage
+          attrs:
+            type: object
+            additionalProperties: true
+          children:
+            type: array
+            items:
+              type: object
+              required:
+                - className
+                - attrs
+                - children
+              properties:
+                className:
+                  type: string
+                  enum:
+                    - Layer
+                attrs:
+                  type: object
+                  required:
+                    - id
+                  properties:
+                    id:
+                      type: string
+                  additionalProperties: true
+                children:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - className
+                      - attrs
+                    properties:
+                      className:
+                        type: string
+                        example: Rect
+                      attrs:
+                        type: object
+                        required:
+                          - id
+                        properties:
+                          id:
+                            type: string
+                        additionalProperties: true
+                      children:
+                        type: array
+                        items:
+                          type: object
+    KonvaLayerConfig:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - className
+          - attrs
+          - children
+        properties:
+          className:
+            type: string
+            enum:
+              - Layer
+          attrs:
+            type: object
+            required:
+              - id
+            properties:
+              id:
+                type: string
+            additionalProperties: true
+          children:
+            type: array
+            items:
+              type: object
+              required:
+                - className
+                - attrs
+              properties:
+                className:
+                  type: string
+                  example: Rect
+                attrs:
+                  type: object
+                  required:
+                    - id
+                  properties:
+                    id:
+                      type: string
+                  additionalProperties: true
+                children:
+                  type: array
+                  items:
+                    type: object
+    KonvaNodeConfig:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - className
+          - attrs
+        properties:
+          className:
+            type: string
+            example: Rect
+          attrs:
+            type: object
+            required:
+              - id
+            properties:
+              id:
+                type: string
+            additionalProperties: true
+          children:
+            type: array
+            items:
+              type: object

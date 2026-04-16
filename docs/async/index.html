@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Webster Canvas WebSocket API</title>
+    <link rel="stylesheet" href="https://unpkg.com/@asyncapi/react-component@1.0.0-next.54/styles/default.min.css" />
+  </head>
+  <body>
+    <div id="asyncapi"></div>
+    <script src="https://unpkg.com/@asyncapi/react-component@1.0.0-next.54/browser/standalone/index.js"></script>
+    <script>
+      AsyncApiStandalone.render(
+        { schema: { url: './canvas-bundled.yaml' }, config: { show: { sidebar: true } } },
+        document.getElementById('asyncapi'),
+      );
+    </script>
+  </body>
+</html>

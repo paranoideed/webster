@@ -1,0 +1,18 @@
+name: commit:ack
+summary: Confirmed commit broadcast to all room members
+payload:
+  schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+  schema:
+    $ref: '../schemas/Commit.yaml'
+examples:
+  - name: commit:ack example
+    payload:
+      number: 6
+      previous: 5
+      changes:
+        - op: add
+          parentId: "layer-1"
+          node:
+            className: Rect
+            attrs: { id: "rect-2", x: 300, y: 200, width: 120, height: 80, fill: "#E74C3C" }
+      createdAt: "2026-04-17T10:01:00.000Z"

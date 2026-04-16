@@ -23,7 +23,8 @@
 		"sql:migrate:down": "npm run database -- migration:revert -d src/db/data-source.ts",
 		"cassandra:migrate:up": "ts-node -r tsconfig-paths/register src/db/cassandra/migrate.ts",
 		"cassandra:migrate:down": "ts-node -r tsconfig-paths/register src/db/cassandra/migrate.ts --down",
-		"docs:bundle": "redocly bundle docs/api.yaml -o docs/api-bundled.yaml"
+		"docs:bundle": "redocly bundle docs/rest/api.yaml -o docs/rest/api-bundled.yaml",
+		"docs:bundle:async": "node -e \"require('@asyncapi/bundler/lib/index.js')(['docs/async/canvas.yaml']).then(d=>{require('fs').writeFileSync('docs/async/canvas-bundled.yaml',d.yml());console.log('done')})\""
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.758.0",
@@ -48,6 +49,7 @@
 		"typeorm": "^0.3.22"
 	},
 	"devDependencies": {
+		"@asyncapi/bundler": "^0.6.4",
 		"@eslint/eslintrc": "^3.2.0",
 		"@eslint/js": "^9.18.0",
 		"@nestjs/cli": "^11.0.0",
