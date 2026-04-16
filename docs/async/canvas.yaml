@@ -74,6 +74,25 @@ channels:
       snapshotPush:
         $ref: './spec/messages/Snapshot.yaml'
 
+  undo:
+    address: undo
+    description: |
+      Client moves `head` one step back and emits this event.
+      Server broadcasts it to all clients in the room so everyone re-renders at the new `head`.
+      Each client calls `buildSnapshot(snapshot, commits.slice(0, head))` to update the canvas.
+    messages:
+      undoEvent:
+        $ref: './spec/messages/Undo.yaml'
+
+  redo:
+    address: redo
+    description: |
+      Client moves `head` one step forward and emits this event.
+      Server broadcasts it to all clients in the room so everyone re-renders at the new `head`.
+    messages:
+      redoEvent:
+        $ref: './spec/messages/Redo.yaml'
+
 operations:
   joinCanvas:
     action: send
@@ -104,6 +123,26 @@ operations:
     action: receive
     channel:
       $ref: '#/channels/snapshot'
+
+  sendUndo:
+    action: send
+    channel:
+      $ref: '#/channels/undo'
+
+  onUndo:
+    action: receive
+    channel:
+      $ref: '#/channels/undo'
+
+  sendRedo:
+    action: send
+    channel:
+      $ref: '#/channels/redo'
+
+  onRedo:
+    action: receive
+    channel:
+      $ref: '#/channels/redo'
 
 components:
   schemas:
@@ -178,6 +217,11 @@ components:
       schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
       schema:
         $ref: './spec/schemas/operations/OpUpdateStage.yaml'
+
+    UndoRedoPayload:
+      schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+      schema:
+        $ref: './spec/schemas/UndoRedoPayload.yaml'
 
     # konva
     KonvaStageConfig:

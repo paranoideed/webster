@@ -1,0 +1,7 @@
+type: object
+required: [head]
+properties:
+  head:
+    type: integer
+    description: Index in commits array to render (0 = snapshot only, N = after N commits)
+    example: 4

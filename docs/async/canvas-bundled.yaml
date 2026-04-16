@@ -1267,6 +1267,67 @@ channels:
                       props:
                         fill: '#9B59B6'
                   createdAt: '2026-04-17T10:05:02.000Z'
+  undo:
+    address: undo
+    description: >
+      Client moves `head` one step back and emits this event.
+
+      Server broadcasts it to all clients in the room so everyone re-renders at
+      the new `head`.
+
+      Each client calls `buildSnapshot(snapshot, commits.slice(0, head))` to
+      update the canvas.
+    messages:
+      undoEvent:
+        name: undo
+        summary: Client moves head one step back; server broadcasts to all room members
+        payload:
+          schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+          schema:
+            type: object
+            required:
+              - head
+            properties:
+              head:
+                type: integer
+                description: >-
+                  Index in commits array to render (0 = snapshot only, N = after
+                  N commits)
+                example: 4
+        examples:
+          - name: undo example
+            payload:
+              head: 4
+  redo:
+    address: redo
+    description: >
+      Client moves `head` one step forward and emits this event.
+
+      Server broadcasts it to all clients in the room so everyone re-renders at
+      the new `head`.
+    messages:
+      redoEvent:
+        name: redo
+        summary: >-
+          Client moves head one step forward; server broadcasts to all room
+          members
+        payload:
+          schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+          schema:
+            type: object
+            required:
+              - head
+            properties:
+              head:
+                type: integer
+                description: >-
+                  Index in commits array to render (0 = snapshot only, N = after
+                  N commits)
+                example: 4
+        examples:
+          - name: redo example
+            payload:
+              head: 5
 operations:
   joinCanvas:
     action: send
@@ -1292,6 +1353,22 @@ operations:
     action: receive
     channel:
       $ref: '#/channels/snapshot'
+  sendUndo:
+    action: send
+    channel:
+      $ref: '#/channels/undo'
+  onUndo:
+    action: receive
+    channel:
+      $ref: '#/channels/undo'
+  sendRedo:
+    action: send
+    channel:
+      $ref: '#/channels/redo'
+  onRedo:
+    action: receive
+    channel:
+      $ref: '#/channels/redo'
 components:
   schemas:
     CanvasState:
@@ -2532,6 +2609,19 @@ components:
           props:
             type: object
             additionalProperties: true
+    UndoRedoPayload:
+      schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+      schema:
+        type: object
+        required:
+          - head
+        properties:
+          head:
+            type: integer
+            description: >-
+              Index in commits array to render (0 = snapshot only, N = after N
+              commits)
+            example: 4
     KonvaStageConfig:
       schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
       schema:

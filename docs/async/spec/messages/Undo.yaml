@@ -1,0 +1,10 @@
+name: undo
+summary: Client moves head one step back; server broadcasts to all room members
+payload:
+  schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+  schema:
+    $ref: '../schemas/UndoRedoPayload.yaml'
+examples:
+  - name: undo example
+    payload:
+      head: 4

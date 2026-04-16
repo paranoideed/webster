@@ -84,7 +84,7 @@ const handlers: Handlers = {
   },
 
   [Op.ADD_LAYER]: (stage, change) => {
-    stage.children.push(change.layer);
+	  stage.children.push(change.layer);
   },
 
   [Op.UPDATE_LAYER]: (stage, change) => {
