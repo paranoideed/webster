@@ -6,7 +6,7 @@ export class Init1774200000000 implements MigrationInterface {
 	public async up(queryRunner: QueryRunner): Promise<void> {
 		// ENUMs
 		await queryRunner.query(
-			`CREATE TYPE "public"."account_roles" AS ENUM('admin', 'user')`
+			`CREATE TYPE "public"."account_roles" AS ENUM('admin', 'user')`,
 		);
 
 		await queryRunner.query(
@@ -26,7 +26,7 @@ export class Init1774200000000 implements MigrationInterface {
 				"deleted_at" TIMESTAMP WITH TIME ZONE,
 				CONSTRAINT "UQ_accounts_email" UNIQUE ("email"),
 				CONSTRAINT "PK_accounts" PRIMARY KEY ("id")
-			)`
+			)`,
 		);
 		await queryRunner.query(
 			`CREATE TABLE "profiles" (
@@ -39,7 +39,7 @@ export class Init1774200000000 implements MigrationInterface {
 				"deleted_at"  TIMESTAMP WITH TIME ZONE,
 				CONSTRAINT "UQ_profiles_username" UNIQUE ("username"),
 				CONSTRAINT "PK_profiles" PRIMARY KEY ("account_id")
-			)`
+			)`,
 		);
 		await queryRunner.query(
 			`CREATE TABLE "email_verifications" (
@@ -50,7 +50,7 @@ export class Init1774200000000 implements MigrationInterface {
 				"created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
 				CONSTRAINT "UQ_email_verifications_code" UNIQUE ("code"),
 				CONSTRAINT "PK_email_verifications" PRIMARY KEY ("id")
-			)`
+			)`,
 		);
 		await queryRunner.query(
 			`CREATE TABLE "projects" (
@@ -86,17 +86,27 @@ export class Init1774200000000 implements MigrationInterface {
 				CONSTRAINT "PK_project_invites" PRIMARY KEY ("id")
 			)`,
 		);
+		await queryRunner.query(
+			`CREATE TABLE "canvases" (
+				"id"         uuid NOT NULL DEFAULT uuid_generate_v4(),
+				"project_id" uuid NOT NULL,
+				"name"       character varying(255) NOT NULL,
+				"created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+				"deleted_at" TIMESTAMP WITH TIME ZONE,
+				CONSTRAINT "PK_canvases" PRIMARY KEY ("id")
+			)`,
+		);
 
 		// Foreign keys
 		await queryRunner.query(
 			`ALTER TABLE "profiles" ADD CONSTRAINT "FK_profiles_account_id"
 			 FOREIGN KEY ("account_id") REFERENCES "accounts"("id")
-			 ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE`
+			 ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE`,
 		);
 		await queryRunner.query(
 			`ALTER TABLE "email_verifications" ADD CONSTRAINT "FK_email_verifications_account_id"
 			 FOREIGN KEY ("account_id") REFERENCES "accounts"("id")
-			 ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE`
+			 ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE`,
 		);
 		await queryRunner.query(
 			`ALTER TABLE "project_members" ADD CONSTRAINT "FK_project_members_account_id"
@@ -120,13 +130,18 @@ export class Init1774200000000 implements MigrationInterface {
 			 ON "project_members" ("account_id", "project_id")
 			 WHERE "deleted_at" IS NULL`,
 		);
+
+		await queryRunner.query(
+			`ALTER TABLE "canvases" ADD CONSTRAINT "FK_canvases_project_id"
+			 FOREIGN KEY ("project_id") REFERENCES "projects"("id")
+			 ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE`,
+		);
 	}
 
 	public async down(queryRunner: QueryRunner): Promise<void> {
 		await queryRunner.query(
 			`DROP INDEX "UQ_project_members_account_project_active"`,
 		);
-
 		await queryRunner.query(
 			`ALTER TABLE "project_invites" DROP CONSTRAINT "FK_project_invites_project_id"`,
 		);
@@ -138,15 +153,24 @@ export class Init1774200000000 implements MigrationInterface {
 		await queryRunner.query(
 			`ALTER TABLE "project_members" DROP CONSTRAINT "FK_project_members_account_id"`,
 		);
+		await queryRunner.query(
+			`ALTER TABLE "canvases" DROP CONSTRAINT "FK_canvases_project_id"`,
+		);
 		await queryRunner.query(`DROP TABLE "project_members"`);
 		await queryRunner.query(`DROP TABLE "projects"`);
 		await queryRunner.query(`DROP TYPE "public"."project_member_roles"`);
 
-		await queryRunner.query(`ALTER TABLE "email_verifications" DROP CONSTRAINT "FK_email_verifications_account_id"`);
-		await queryRunner.query(`ALTER TABLE "profiles" DROP CONSTRAINT "FK_profiles_account_id"`);
+		await queryRunner.query(
+			`ALTER TABLE "email_verifications" DROP CONSTRAINT "FK_email_verifications_account_id"`,
+		);
+		await queryRunner.query(
+			`ALTER TABLE "profiles" DROP CONSTRAINT "FK_profiles_account_id"`,
+		);
 		await queryRunner.query(`DROP TABLE "email_verifications"`);
 		await queryRunner.query(`DROP TABLE "profiles"`);
 		await queryRunner.query(`DROP TABLE "accounts"`);
 		await queryRunner.query(`DROP TYPE "public"."account_roles"`);
+		await queryRunner.query(`DROP TABLE "canvases"`);
 	}
 }
+

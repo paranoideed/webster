@@ -1125,6 +1125,255 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Errors'
+  /webster/v1/projects/{projectId}/canvases:
+    get:
+      tags:
+        - canvases
+      summary: List canvases
+      description: |
+        Returns a paginated list of canvases in a project. Requires membership in the project (any role).
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page[limit]
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: page[offset]
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - newest
+              - oldest
+            default: newest
+      responses:
+        '200':
+          description: List of canvases.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CanvasCollection'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Not a project member.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    post:
+      tags:
+        - canvases
+      summary: Create a canvas
+      description: |
+        Creates a new canvas in the project. Requires **owner** or **editor** role.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCanva'
+      responses:
+        '201':
+          description: Canvas created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Canva'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Insufficient permissions (viewer role).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/projects/{projectId}/canvases/{id}:
+    get:
+      tags:
+        - canvases
+      summary: Get a canvas
+      description: |
+        Returns a single canvas by ID. Requires membership in the project (any role).
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Canvas found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Canva'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Not a project member.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Canvas not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    patch:
+      tags:
+        - canvases
+      summary: Update a canvas
+      description: |
+        Updates the canvas name. Requires **owner** or **editor** role.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCanva'
+      responses:
+        '200':
+          description: Canvas updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Canva'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Insufficient permissions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Canvas not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    delete:
+      tags:
+        - canvases
+      summary: Delete a canvas
+      description: |
+        Soft-deletes a canvas. Requires **owner** or **editor** role.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Canvas deleted.
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Insufficient permissions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Canvas not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
 components:
   securitySchemes:
     cookieAuth:
@@ -1671,6 +1920,130 @@ components:
                   type: string
                   format: email
                   example: colleague@example.com
+    CreateCanva:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - attributes
+          properties:
+            type:
+              type: string
+              enum:
+                - canva
+            attributes:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  example: Landing page
+    UpdateCanva:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - id
+            - type
+            - attributes
+          properties:
+            id:
+              type: string
+              format: uuid
+            type:
+              type: string
+              enum:
+                - canva
+            attributes:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  example: Updated name
+    Canva:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/CanvaData'
+    CanvaData:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Canvas ID
+        type:
+          type: string
+          enum:
+            - canva
+        attributes:
+          type: object
+          required:
+            - project_id
+            - name
+            - created_at
+          properties:
+            project_id:
+              type: string
+              format: uuid
+              description: Parent project ID
+            name:
+              type: string
+              description: Canvas name (1–255 chars)
+              example: Landing page
+            created_at:
+              type: string
+              format: date-time
+    CanvasCollection:
+      type: object
+      required:
+        - data
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CanvaData'
+        links:
+          type: object
+          properties:
+            self:
+              type: string
+              format: uri
+            first:
+              type: string
+              format: uri
+            last:
+              type: string
+              format: uri
+            prev:
+              type: string
+              format: uri
+              nullable: true
+            next:
+              type: string
+              format: uri
+              nullable: true
     PaginationData:
       type: object
       required:

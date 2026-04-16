@@ -12,11 +12,14 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       PORT: 3000
+      CASSANDRA_CONTACT_POINTS: cassandra
     volumes:
       - .:/app
     depends_on:
       db:
         condition: service_started
+      cassandra:
+        condition: service_healthy
     command: npm run start:dev
 
   db:
@@ -34,6 +37,25 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  cassandra:
+    container_name: webster-cassandra
+    image: cassandra:5
+    restart: unless-stopped
+    ports:
+      - "${CASSANDRA_PORT:-9042}:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: webster
+      CASSANDRA_DC: dc1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
   docs-swagger:
     container_name: webster-docs
     image: swaggerapi/swagger-ui
@@ -46,3 +68,4 @@ services:
 
 volumes:
   postgres_data:
+  cassandra_data:

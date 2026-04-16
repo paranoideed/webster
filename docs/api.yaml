@@ -72,6 +72,18 @@ components:
     SendInvite:
       $ref: './spec/project/schemas/SendInvite.yaml'
 
+    # canva
+    CreateCanva:
+      $ref: './spec/canva/schemas/CreateCanva.yaml'
+    UpdateCanva:
+      $ref: './spec/canva/schemas/UpdateCanva.yaml'
+    Canva:
+      $ref: './spec/canva/schemas/Canva.yaml'
+    CanvaData:
+      $ref: './spec/canva/schemas/CanvaData.yaml'
+    CanvasCollection:
+      $ref: './spec/canva/schemas/CanvasCollection.yaml'
+
 paths:
   # auth
   /webster/v1/accounts/registration:
@@ -118,3 +130,9 @@ paths:
     $ref: './spec/project/paths/ProjectMemberById.yaml'
   /webster/v1/projects/{id}/invites:
     $ref: './spec/project/paths/ProjectInvites.yaml'
+
+  # canvases
+  /webster/v1/projects/{projectId}/canvases:
+    $ref: './spec/canva/paths/Canvases.yaml'
+  /webster/v1/projects/{projectId}/canvases/{id}:
+    $ref: './spec/canva/paths/CanvaById.yaml'

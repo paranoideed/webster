@@ -1,0 +1,102 @@
+get:
+  tags:
+    - canvases
+  summary: List canvases
+  description: >
+    Returns a paginated list of canvases in a project.
+    Requires membership in the project (any role).
+  security:
+    - cookieAuth: []
+  parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: page[limit]
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: page[offset]
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    - name: sort
+      in: query
+      schema:
+        type: string
+        enum: [ newest, oldest ]
+        default: newest
+  responses:
+    '200':
+      description: List of canvases.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/CanvasCollection.yaml'
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Not a project member.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+post:
+  tags:
+    - canvases
+  summary: Create a canvas
+  description: >
+    Creates a new canvas in the project.
+    Requires **owner** or **editor** role.
+  security:
+    - cookieAuth: []
+  parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../schemas/CreateCanva.yaml'
+  responses:
+    '201':
+      description: Canvas created.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/Canva.yaml'
+    '400':
+      description: Validation error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Insufficient permissions (viewer role).
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

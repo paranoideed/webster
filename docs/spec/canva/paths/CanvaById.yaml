@@ -1,0 +1,151 @@
+get:
+  tags:
+    - canvases
+  summary: Get a canvas
+  description: >
+    Returns a single canvas by ID.
+    Requires membership in the project (any role).
+  security:
+    - cookieAuth: []
+  parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: Canvas found.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/Canva.yaml'
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Not a project member.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '404':
+      description: Canvas not found.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+patch:
+  tags:
+    - canvases
+  summary: Update a canvas
+  description: >
+    Updates the canvas name.
+    Requires **owner** or **editor** role.
+  security:
+    - cookieAuth: []
+  parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../schemas/UpdateCanva.yaml'
+  responses:
+    '200':
+      description: Canvas updated.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/Canva.yaml'
+    '400':
+      description: Validation error.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Insufficient permissions.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '404':
+      description: Canvas not found.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+delete:
+  tags:
+    - canvases
+  summary: Delete a canvas
+  description: >
+    Soft-deletes a canvas.
+    Requires **owner** or **editor** role.
+  security:
+    - cookieAuth: []
+  parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '204':
+      description: Canvas deleted.
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Insufficient permissions.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '404':
+      description: Canvas not found.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

@@ -1,0 +1,31 @@
+type: object
+required:
+  - id
+  - type
+  - attributes
+properties:
+  id:
+    type: string
+    format: uuid
+    description: Canvas ID
+  type:
+    type: string
+    enum: [ canva ]
+  attributes:
+    type: object
+    required:
+      - project_id
+      - name
+      - created_at
+    properties:
+      project_id:
+        type: string
+        format: uuid
+        description: Parent project ID
+      name:
+        type: string
+        description: Canvas name (1–255 chars)
+        example: "Landing page"
+      created_at:
+        type: string
+        format: date-time
