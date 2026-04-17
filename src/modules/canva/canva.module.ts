@@ -4,6 +4,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { CanvaController } from './canva.controller';
 import { CanvaService } from './canva.service';
+import { CanvaGateway } from './canva.gateway';
+import { CanvaWsService } from './canva.ws.service';
+import { CassandraService } from 'src/db/cassandra/cassandra.service';
 import { JwtAccessStrategy } from '../shared/jwt.strategy';
 
 @Module({
@@ -18,6 +21,6 @@ import { JwtAccessStrategy } from '../shared/jwt.strategy';
 		}),
 	],
 	controllers: [CanvaController],
-	providers: [CanvaService, JwtAccessStrategy],
+	providers: [CanvaService, CanvaGateway, CanvaWsService, CassandraService, JwtAccessStrategy],
 })
 export class CanvaModule {}
