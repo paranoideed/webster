@@ -2,9 +2,8 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
-import { CanvaController } from './canva.controller';
-import { CanvaService } from './canva.service';
-import { JwtAccessStrategy } from '../shared/jwt.strategy';
+import { DrawGateway } from './draw.gateway';
+import { DrawService } from './draw.service';
 import { CassandraService } from 'src/db/cassandra/cassandra.service';
 
 @Module({
@@ -18,7 +17,6 @@ import { CassandraService } from 'src/db/cassandra/cassandra.service';
 			inject: [ConfigService],
 		}),
 	],
-	controllers: [CanvaController],
-	providers: [CanvaService, CassandraService, JwtAccessStrategy],
+	providers: [DrawGateway, DrawService, CassandraService, ConfigService],
 })
-export class CanvaModule {}
+export class DrawModule {}

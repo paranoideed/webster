@@ -1,7 +1,7 @@
 type: object
-required: [canvaId]
+required: [canva_id]
 properties:
-  canvaId:
+  canva_id:
     type: string
     format: uuid
     example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"

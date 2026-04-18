@@ -1,98 +1,197 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Webster Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS REST + WebSocket backend for a collaborative canvas editor. Uses PostgreSQL (TypeORM) for user/project data and Apache Cassandra (event sourcing) for canvas history.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Stack
 
-## Description
+- **NestJS** — HTTP + WebSocket (Socket.IO)
+- **PostgreSQL 17** — accounts, projects, canvases metadata
+- **Cassandra 5** — canvas commits and snapshots
+- **JWT** in cookies (access + refresh)
+- **S3** — avatar uploads
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## Prerequisites
 
-```bash
-$ npm install
-```
+- Docker + Docker Compose
+- Node.js 20+ (for running migrations locally or outside Docker)
+- A GitHub Personal Access Token with `read:packages` scope (to install `@paranoideed/drawebster` from GitHub Packages)
 
-## Compile and run the project
+---
+
+## Setup
+
+### 1. Environment file
+
+Copy the example and fill in the required values:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cp .env.example .env
 ```
 
-## Run tests
+Key variables to configure:
+
+| Variable | Required | Notes |
+|---|---|---|
+| `PORT` | yes | HTTP port exposed on host (e.g. `6767`) |
+| `DOCS_PORT` | yes | Swagger UI port (e.g. `6969`) |
+| `DB_*` | yes | PostgreSQL credentials |
+| `JWT_SECRET` | yes | Any random secret string |
+| `JWT_ACCESS_TTL_SEC` | yes | Access token lifetime in seconds |
+| `JWT_REFRESH_TTL_SEC` | yes | Refresh token lifetime in seconds |
+| `FRONTEND_URL` | yes | CORS origin (e.g. `http://localhost:5173`) |
+| `GOOGLE_CLIENT_ID/SECRET` | optional | Google OAuth (leave empty to disable) |
+| `GOOGLE_REDIRECT_URI` | optional | Must match Google Console config |
+| `AWS_*` / `BUCKET_NAME` | optional | S3 avatar uploads |
+| `SMTP_*` | optional | Email (verification, invites) |
+| `CASSANDRA_*` | yes | Defaults work with Docker Compose |
+| `SNAPSHOT_INTERVAL` | yes | Commits between snapshots (e.g. `5`) |
+| `ASYNC_DOCS_PORT` | optional | AsyncAPI viewer port (default `3001`) |
+
+### 2. npm auth for GitHub Packages
+
+The project depends on `@paranoideed/drawebster` published to GitHub Packages. Set your token before installing:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+export GITHUB_TOKEN=ghp_your_token_here
 ```
 
-## Deployment
+The `.npmrc` file already points `@paranoideed` to `npm.pkg.github.com` and reads the token from `$GITHUB_TOKEN`.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+---
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Running with Docker Compose
+
+### Start everything
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker-compose up
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+This starts:
+- `webster-backend` — NestJS app in watch mode on `$PORT`
+- `webster-postgres` — PostgreSQL 17 on `$DB_PORT`
+- `webster-cassandra` — Cassandra 5 on `$CASSANDRA_PORT` (default 9042)
+- `webster-docs` — Swagger UI on `$DOCS_PORT`
+- `webster-docs-async` — AsyncAPI viewer on `$ASYNC_DOCS_PORT` (default 3001)
 
-## Resources
+> Cassandra takes ~60 seconds to become healthy on first start. The backend waits for the health check before starting.
 
-Check out a few resources that may come in handy when working with NestJS:
+### Start only the databases
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+docker-compose up db cassandra
+```
 
-## Support
+Then run the backend locally:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npm install
+npm run start:dev
+```
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Migrations
 
-## License
+### PostgreSQL (TypeORM)
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Run after the Postgres container is up:
+
+```bash
+npm run sql:migrate:up
+```
+
+Revert the last migration:
+
+```bash
+npm run sql:migrate:down
+```
+
+Migrations live in `src/db/migrations/`. The TypeORM CLI is invoked via `ts-node` with `dotenv` so it reads your `.env` automatically.
+
+### Cassandra
+
+Run after Cassandra is healthy (wait for the health check or ~60s on first start):
+
+```bash
+npm run cassandra:migrate:up
+```
+
+This creates the `webster` keyspace (if it doesn't exist) and runs pending CQL migrations.
+
+Revert the last migration:
+
+```bash
+npm run cassandra:migrate:down
+```
+
+Cassandra migrations live in `src/db/cassandra/migrations/`.
+
+---
+
+## API Documentation
+
+### REST (OpenAPI / Swagger)
+
+After `docker-compose up`, open:
+
+```
+http://localhost:<DOCS_PORT>
+```
+
+To regenerate the bundled spec after editing `docs/rest/`:
+
+```bash
+npm run docs:bundle:rest
+```
+
+### WebSocket (AsyncAPI)
+
+After `docker-compose up`, open:
+
+```
+http://localhost:<ASYNC_DOCS_PORT>
+```
+
+To regenerate the bundled spec after editing `docs/async/`:
+
+```bash
+npm run docs:bundle:async
+```
+
+---
+
+## Local Development (without Docker)
+
+```bash
+# Install dependencies
+export GITHUB_TOKEN=ghp_your_token_here
+npm install
+
+# Start in watch mode
+npm run start:dev
+
+# Lint & format
+npm run lint
+npm run format
+
+# Tests
+npm run test
+npm run test:e2e
+```
+
+---
+
+## WebSocket Flow
+
+Connect to `ws://localhost:<PORT>` with Socket.IO.
+
+1. **Join canvas** — emit `join` with `{ canva_id }` to enter a room and load canvas state.
+2. **Commit changes** — emit `commit` with `{ previous, changes }`. Server validates, stores, and broadcasts the commit to all room members.
+3. **Undo / Redo** — emit `undo` or `redo` with `{ head }`. Server validates the head and broadcasts it to the room.
+
+Error events: `commit:error`, `undo:error`, `redo:error`.
+
+Full event reference: see the AsyncAPI docs.

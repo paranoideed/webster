@@ -1,0 +1,18 @@
+name: undo:error
+summary: Undo rejection sent only to the sender
+payload:
+  schemaFormat: 'application/vnd.aai.asyncapi+yaml;version=3.0.0'
+  schema:
+    type: object
+    required: [message]
+    properties:
+      message:
+        type: string
+        description: Human-readable error description
+examples:
+  - name: head before snapshot boundary
+    payload:
+      message: "head 3 is before snapshot boundary 10"
+  - name: not joined
+    payload:
+      message: "Not joined to any canvas"

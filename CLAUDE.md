@@ -67,6 +67,7 @@ Required in `.env`:
 | `CASSANDRA_LOCAL_DC` | Cassandra local datacenter name (default `dc1`) |
 | `CASSANDRA_KEYSPACE` | Cassandra keyspace (default `webster`) |
 | `CASSANDRA_PORT` | Cassandra native transport port (default `9042`) |
+| `SNAPSHOT_INTERVAL` | Commits between snapshots (default `10`) |
 | `DOCS_PORT` | Swagger UI port |
 
 ## Architecture

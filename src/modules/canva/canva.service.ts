@@ -6,9 +6,11 @@ import {
 import { database } from 'src/db/data-source';
 import { Canva } from 'src/db/entity/canva.entity';
 import { ProjectMember, ProjectMemberRole } from 'src/db/entity/project-member.entity';
+import { CassandraService } from 'src/db/cassandra/cassandra.service';
 
 @Injectable()
 export class CanvaService {
+	constructor(private readonly cassandra: CassandraService) {}
 
 	async getCanvases(
 		accountId: string,
@@ -31,41 +33,38 @@ export class CanvaService {
 		return { canvases, total };
 	}
 
-	async getCanva(accountId: string, projectId: string, canvaId: string): Promise<Canva> {
-		await this.requireMember(accountId, projectId);
-		return this.findCanva(canvaId, projectId);
+	async getCanva(accountId: string, canvaId: string): Promise<Canva> {
+		const canva = await this.findCanva(canvaId);
+		await this.requireMember(accountId, canva.projectId);
+		return canva;
 	}
 
 	async createCanva(accountId: string, projectId: string, name: string): Promise<Canva> {
 		await this.requireEditorOrOwner(accountId, projectId);
 		const canva = Canva.create({ projectId, name });
 		await canva.save();
+		await this.cassandra.initCanvas(canva.id);
 		return canva;
 	}
 
-	async updateCanva(
-		accountId: string,
-		projectId: string,
-		canvaId: string,
-		name: string,
-	): Promise<Canva> {
-		await this.requireEditorOrOwner(accountId, projectId);
-		const canva = await this.findCanva(canvaId, projectId);
+	async updateCanva(accountId: string, canvaId: string, name: string): Promise<Canva> {
+		const canva = await this.findCanva(canvaId);
+		await this.requireEditorOrOwner(accountId, canva.projectId);
 		canva.name = name;
 		await canva.save();
 		return canva;
 	}
 
-	async deleteCanva(accountId: string, projectId: string, canvaId: string): Promise<void> {
-		await this.requireEditorOrOwner(accountId, projectId);
-		const canva = await this.findCanva(canvaId, projectId);
+	async deleteCanva(accountId: string, canvaId: string): Promise<void> {
+		const canva = await this.findCanva(canvaId);
+		await this.requireEditorOrOwner(accountId, canva.projectId);
 		await canva.softRemove();
 	}
 
 	// ─── Helpers ──────────────────────────────────────────────────────────────
 
-	private async findCanva(canvaId: string, projectId: string): Promise<Canva> {
-		const canva = await Canva.findOneBy({ id: canvaId, projectId });
+	private async findCanva(canvaId: string): Promise<Canva> {
+		const canva = await Canva.findOneBy({ id: canvaId });
 		if (!canva) throw new NotFoundException('Canvas not found');
 		return canva;
 	}

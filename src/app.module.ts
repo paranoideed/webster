@@ -6,9 +6,9 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { ProfileModule } from "./modules/profile/profile.module";
 import { ProjectModule } from "./modules/project/project.module";
 import { CanvaModule } from "./modules/canva/canva.module";
+import { DrawModule } from "./modules/draw/draw.module";
 import { database } from "src/db/data-source";
 import { cassandraDatabase } from "src/db/cassandra/cassandra.client";
-import { runMigrations } from "src/db/cassandra/cassandra.migrator";
 
 @Module({
 	imports: [
@@ -17,6 +17,7 @@ import { runMigrations } from "src/db/cassandra/cassandra.migrator";
 		ProfileModule,
 		ProjectModule,
 		CanvaModule,
+		DrawModule,
 	],
 	controllers: [AppController],
 	providers: [AppService]
@@ -24,7 +25,6 @@ import { runMigrations } from "src/db/cassandra/cassandra.migrator";
 export class AppModule implements OnModuleInit {
 	async onModuleInit() {
 		await database.init();
-		await runMigrations();
 		await cassandraDatabase.init();
 	}
 }

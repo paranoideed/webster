@@ -11,6 +11,6 @@ properties:
     type: array
     items:
       $ref: './operations/Operation.yaml'
-  createdAt:
+  created_at:
     type: string
     format: date-time

@@ -8,8 +8,8 @@ get:
   security:
     - cookieAuth: []
   parameters:
-    - name: projectId
-      in: path
+    - name: project_id
+      in: query
       required: true
       schema:
         type: string
@@ -62,13 +62,6 @@ post:
     Requires **owner** or **editor** role.
   security:
     - cookieAuth: []
-  parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
   requestBody:
     required: true
     content:

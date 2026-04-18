@@ -1,0 +1,342 @@
+[
+  {
+    "previous": 0,
+    "changes": [
+      {
+        "op": "add",
+        "parentId": "layer-1",
+        "node": {
+          "className": "Rect",
+          "attrs": {
+            "id": "rect-1",
+            "x": 350,
+            "y": 250,
+            "width": 100,
+            "height": 100,
+            "fill": "#4A90E2"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "previous": 1,
+    "changes": [
+      {
+        "op": "update",
+        "id": "rect-1",
+        "props": {
+          "width": 200,
+          "height": 200,
+          "x": 300,
+          "y": 200
+        }
+      }
+    ]
+  },
+  {
+    "previous": 2,
+    "changes": [
+      {
+        "op": "add",
+        "parentId": "layer-1",
+        "node": {
+          "className": "Rect",
+          "attrs": {
+            "id": "bg-1",
+            "x": 300,
+            "y": 200,
+            "width": 200,
+            "height": 200,
+            "fill": "#2ECC71"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "previous": 3,
+    "changes": [
+      {
+        "op": "reorder",
+        "id": "bg-1",
+        "newIndex": 0
+      }
+    ]
+  },
+  {
+    "previous": 4,
+    "changes": [
+      {
+        "op": "update",
+        "id": "bg-1",
+        "props": {
+          "fill": "#E74C3C",
+          "opacity": 0.5
+        }
+      }
+    ]
+  },
+  {
+    "previous": 5,
+    "changes": [
+      {
+        "op": "add",
+        "parentId": "layer-1",
+        "node": {
+          "className": "Circle",
+          "attrs": {
+            "id": "circle-1",
+            "x": 400,
+            "y": 300,
+            "radius": 50,
+            "fill": "#FFFFFF"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "previous": 6,
+    "changes": [
+      {
+        "op": "add_layer",
+        "layer": {
+          "className": "Layer",
+          "attrs": {
+            "id": "layer-3"
+          },
+          "children": []
+        }
+      }
+    ]
+  },
+  {
+    "previous": 7,
+    "changes": [
+      {
+        "op": "update_layer",
+        "id": "layer-3",
+        "props": {
+          "fill": "#3498DB",
+          "opacity": 0.5
+        }
+      }
+    ]
+  },
+  {
+    "previous": 8,
+    "changes": [
+      {
+        "op": "add_layer",
+        "layer": {
+          "className": "Layer",
+          "attrs": {
+            "id": "layer-4",
+            "opacity": 0
+          },
+          "children": []
+        }
+      }
+    ]
+  },
+  {
+    "previous": 9,
+    "changes": [
+      {
+        "op": "move_to_layer",
+        "id": "circle-1",
+        "layerId": "layer-4"
+      }
+    ]
+  },
+  {
+    "previous": 10,
+    "changes": [
+      {
+        "op": "add",
+        "parentId": "layer-3",
+        "node": {
+          "className": "Text",
+          "attrs": {
+            "id": "text-1",
+            "x": 120,
+            "y": 80,
+            "text": "hello world",
+            "fontSize": 24,
+            "fontFamily": "Arial",
+            "fill": "#FFFFFF"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "previous": 11,
+    "changes": [
+      {
+        "op": "add",
+        "parentId": "layer-1",
+        "node": {
+          "className": "Star",
+          "attrs": {
+            "id": "star-1",
+            "x": 650,
+            "y": 120,
+            "numPoints": 5,
+            "innerRadius": 20,
+            "outerRadius": 45,
+            "fill": "#F1C40F",
+            "stroke": "#E67E22",
+            "strokeWidth": 2
+          }
+        }
+      }
+    ]
+  },
+  {
+    "previous": 12,
+    "changes": [
+      {
+        "op": "update",
+        "id": "rect-1",
+        "props": { "cornerRadius": 16 }
+      }
+    ]
+  },
+  {
+    "previous": 13,
+    "changes": [
+      {
+        "op": "add",
+        "parentId": "layer-1",
+        "node": {
+          "className": "Circle",
+          "attrs": {
+            "id": "circle-2",
+            "x": 680,
+            "y": 400,
+            "radius": 35,
+            "fill": "#9B59B6",
+            "opacity": 0.8
+          }
+        }
+      }
+    ]
+  },
+  {
+    "previous": 14,
+    "changes": [
+      {
+        "op": "reorder",
+        "id": "star-1",
+        "newIndex": 0
+      }
+    ]
+  },
+  {
+    "previous": 15,
+    "changes": [
+      {
+        "op": "update",
+        "id": "text-1",
+        "props": { "text": "webster", "fontSize": 32, "fontStyle": "bold" }
+      }
+    ]
+  },
+  {
+    "previous": 16,
+    "changes": [
+      {
+        "op": "update",
+        "id": "circle-2",
+        "props": { "fill": "#E74C3C", "radius": 55 }
+      }
+    ]
+  },
+  {
+    "previous": 17,
+    "changes": [
+      {
+        "op": "update_layer",
+        "id": "layer-1",
+        "props": { "opacity": 0.9 }
+      }
+    ]
+  },
+  {
+    "previous": 18,
+    "changes": [
+      {
+        "op": "add",
+        "parentId": "layer-3",
+        "node": {
+          "className": "Rect",
+          "attrs": {
+            "id": "rect-2",
+            "x": 500,
+            "y": 350,
+            "width": 80,
+            "height": 80,
+            "fill": "#1ABC9C",
+            "rotation": 45
+          }
+        }
+      }
+    ]
+  },
+  {
+    "previous": 19,
+    "changes": [
+      {
+        "op": "update",
+        "id": "bg-1",
+        "props": { "opacity": 0.3 }
+      }
+    ]
+  },
+  {
+    "previous": 20,
+    "changes": [
+      {
+        "op": "add",
+        "parentId": "layer-4",
+        "node": {
+          "className": "Line",
+          "attrs": {
+            "id": "line-1",
+            "points": [
+              42, 520,
+              48, 508,
+              55, 491,
+              63, 472,
+              74, 455,
+              89, 437,
+              102, 418,
+              113, 400,
+              121, 381,
+              128, 362,
+              134, 341,
+              139, 322,
+              142, 308,
+              147, 291,
+              153, 275,
+              161, 260,
+              170, 247,
+              181, 236,
+              194, 226,
+              208, 218,
+              223, 213,
+              239, 210
+            ],
+            "stroke": "#1a1a1a",
+            "strokeWidth": 3,
+            "lineCap": "round",
+            "lineJoin": "round",
+            "tension": 0.4
+          }
+        }
+      }
+    ]
+  }
+]

@@ -8,12 +8,6 @@ get:
   security:
     - cookieAuth: []
   parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
     - name: id
       in: path
       required: true
@@ -56,12 +50,6 @@ patch:
   security:
     - cookieAuth: []
   parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
     - name: id
       in: path
       required: true
@@ -116,12 +104,6 @@ delete:
   security:
     - cookieAuth: []
   parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
     - name: id
       in: path
       required: true

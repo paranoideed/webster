@@ -64,7 +64,7 @@ export async function runMigrations() {
 	const migrationsDir = path.join(__dirname, 'migrations');
 	const files = fs
 		.readdirSync(migrationsDir)
-		.filter((f) => f.endsWith('.ts') || f.endsWith('.js'))
+		.filter((f) => (f.endsWith('.ts') && !f.endsWith('.d.ts')) || f.endsWith('.js'))
 		.sort();
 
 	for (const file of files) {
@@ -105,7 +105,7 @@ export async function revertLastMigration() {
 	const migrationsDir = path.join(__dirname, 'migrations');
 	const files = fs
 		.readdirSync(migrationsDir)
-		.filter((f) => f.endsWith('.ts') || f.endsWith('.js'))
+		.filter((f) => (f.endsWith('.ts') && !f.endsWith('.d.ts')) || f.endsWith('.js'))
 		.sort()
 		.reverse();
 

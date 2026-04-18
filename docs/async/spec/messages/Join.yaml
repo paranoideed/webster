@@ -7,4 +7,4 @@ payload:
 examples:
   - name: join example
     payload:
-      canvaId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      canva_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"

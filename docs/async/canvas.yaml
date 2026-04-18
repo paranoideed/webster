@@ -93,6 +93,24 @@ channels:
       redoEvent:
         $ref: './spec/messages/Redo.yaml'
 
+  undo:error:
+    address: undo:error
+    description: |
+      Server sends this only to the sender when undo is rejected.
+      Happens when `head` is before the snapshot boundary or client is not joined to any canvas.
+    messages:
+      undoError:
+        $ref: './spec/messages/UndoError.yaml'
+
+  redo:error:
+    address: redo:error
+    description: |
+      Server sends this only to the sender when redo is rejected.
+      Happens when `head` exceeds the latest commit number or client is not joined to any canvas.
+    messages:
+      redoError:
+        $ref: './spec/messages/RedoError.yaml'
+
 operations:
   joinCanvas:
     action: send
@@ -143,6 +161,16 @@ operations:
     action: receive
     channel:
       $ref: '#/channels/redo'
+
+  onUndoError:
+    action: receive
+    channel:
+      $ref: '#/channels/undo:error'
+
+  onRedoError:
+    action: receive
+    channel:
+      $ref: '#/channels/redo:error'
 
 components:
   schemas:

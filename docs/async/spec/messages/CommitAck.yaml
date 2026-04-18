@@ -15,4 +15,4 @@ examples:
           node:
             className: Rect
             attrs: { id: "rect-2", x: 300, y: 200, width: 120, height: 80, fill: "#E74C3C" }
-      createdAt: "2026-04-17T10:01:00.000Z"
+      created_at: "2026-04-18T10:01:00.000Z"

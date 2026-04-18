@@ -5,7 +5,14 @@ payload:
   schema:
     $ref: '../schemas/CommitError.yaml'
 examples:
-  - name: stale previous
+  - name: access denied
     payload:
-      code: STALE_PREVIOUS
-      message: "Commit rejected: previous=3 but current HEAD=5"
+      message: "Access denied"
+  - name: invalid changes
+    payload:
+      message: "Invalid changes"
+      errors:
+        - "[0] parentId must be a non-empty string"
+  - name: commit failed
+    payload:
+      message: "Commit failed, please retry"

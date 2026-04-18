@@ -1,5 +1,5 @@
 type: object
-required: [version, body, createdAt]
+required: [version, body, created_at]
 properties:
   version:
     type: integer
@@ -7,6 +7,6 @@ properties:
     example: 2
   body:
     $ref: './konva/KonvaStageConfig.yaml'
-  createdAt:
+  created_at:
     type: string
     format: date-time

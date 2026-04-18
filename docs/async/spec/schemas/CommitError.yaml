@@ -1,10 +1,13 @@
 type: object
-required: [code, message]
+required: [message]
 properties:
-  code:
-    type: string
-    enum: [STALE_PREVIOUS, UNAUTHORIZED, NOT_FOUND]
-    example: STALE_PREVIOUS
   message:
     type: string
-    example: "Commit rejected: previous=3 but current HEAD=5"
+    description: Human-readable error description
+    example: "Commit failed, please retry"
+  errors:
+    type: array
+    description: Validation errors (present only when changes are invalid)
+    items:
+      type: string
+    example: ["[0] parentId must be a non-empty string"]

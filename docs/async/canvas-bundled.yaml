@@ -42,16 +42,16 @@ channels:
           schema:
             type: object
             required:
-              - canvaId
+              - canva_id
             properties:
-              canvaId:
+              canva_id:
                 type: string
                 format: uuid
                 example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         examples:
           - name: join example
             payload:
-              canvaId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+              canva_id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
   joined:
     address: joined
     description: Server confirms join and sends current canvas state.
@@ -72,7 +72,7 @@ channels:
                 required:
                   - version
                   - body
-                  - createdAt
+                  - created_at
                 properties:
                   version:
                     type: integer
@@ -136,7 +136,7 @@ channels:
                                     type: array
                                     items:
                                       type: object
-                  createdAt:
+                  created_at:
                     type: string
                     format: date-time
               commits:
@@ -351,7 +351,7 @@ channels:
                                 type: object
                                 additionalProperties: true
                         discriminator: op
-                    createdAt:
+                    created_at:
                       type: string
                       format: date-time
         examples:
@@ -867,7 +867,7 @@ channels:
                           type: object
                           additionalProperties: true
                   discriminator: op
-              createdAt:
+              created_at:
                 type: string
                 format: date-time
         examples:
@@ -887,7 +887,7 @@ channels:
                       width: 120
                       height: 80
                       fill: '#E74C3C'
-              createdAt: '2026-04-17T10:01:00.000Z'
+              created_at: '2026-04-18T10:01:00.000Z'
   commit:error:
     address: commit:error
     description: |
@@ -903,24 +903,31 @@ channels:
           schema:
             type: object
             required:
-              - code
               - message
             properties:
-              code:
-                type: string
-                enum:
-                  - STALE_PREVIOUS
-                  - UNAUTHORIZED
-                  - NOT_FOUND
-                example: STALE_PREVIOUS
               message:
                 type: string
-                example: 'Commit rejected: previous=3 but current HEAD=5'
+                description: Human-readable error description
+                example: Commit failed, please retry
+              errors:
+                type: array
+                description: Validation errors (present only when changes are invalid)
+                items:
+                  type: string
+                example:
+                  - '[0] parentId must be a non-empty string'
         examples:
-          - name: stale previous
+          - name: access denied
             payload:
-              code: STALE_PREVIOUS
-              message: 'Commit rejected: previous=3 but current HEAD=5'
+              message: Access denied
+          - name: invalid changes
+            payload:
+              message: Invalid changes
+              errors:
+                - '[0] parentId must be a non-empty string'
+          - name: commit failed
+            payload:
+              message: Commit failed, please retry
   snapshot:
     address: snapshot
     description: >
@@ -945,7 +952,7 @@ channels:
                 required:
                   - version
                   - body
-                  - createdAt
+                  - created_at
                 properties:
                   version:
                     type: integer
@@ -1009,7 +1016,7 @@ channels:
                                     type: array
                                     items:
                                       type: object
-                  createdAt:
+                  created_at:
                     type: string
                     format: date-time
               commits:
@@ -1224,7 +1231,7 @@ channels:
                                 type: object
                                 additionalProperties: true
                         discriminator: op
-                    createdAt:
+                    created_at:
                       type: string
                       format: date-time
         examples:
@@ -1328,6 +1335,62 @@ channels:
           - name: redo example
             payload:
               head: 5
+  undo:error:
+    address: undo:error
+    description: >
+      Server sends this only to the sender when undo is rejected.
+
+      Happens when `head` is before the snapshot boundary or client is not
+      joined to any canvas.
+    messages:
+      undoError:
+        name: undo:error
+        summary: Undo rejection sent only to the sender
+        payload:
+          schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                description: Human-readable error description
+        examples:
+          - name: head before snapshot boundary
+            payload:
+              message: head 3 is before snapshot boundary 10
+          - name: not joined
+            payload:
+              message: Not joined to any canvas
+  redo:error:
+    address: redo:error
+    description: >
+      Server sends this only to the sender when redo is rejected.
+
+      Happens when `head` exceeds the latest commit number or client is not
+      joined to any canvas.
+    messages:
+      redoError:
+        name: redo:error
+        summary: Redo rejection sent only to the sender
+        payload:
+          schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                description: Human-readable error description
+        examples:
+          - name: head exceeds latest commit
+            payload:
+              message: head 15 exceeds latest commit 10
+          - name: not joined
+            payload:
+              message: Not joined to any canvas
 operations:
   joinCanvas:
     action: send
@@ -1369,6 +1432,14 @@ operations:
     action: receive
     channel:
       $ref: '#/channels/redo'
+  onUndoError:
+    action: receive
+    channel:
+      $ref: '#/channels/undo:error'
+  onRedoError:
+    action: receive
+    channel:
+      $ref: '#/channels/redo:error'
 components:
   schemas:
     CanvasState:
@@ -1384,7 +1455,7 @@ components:
             required:
               - version
               - body
-              - createdAt
+              - created_at
             properties:
               version:
                 type: integer
@@ -1448,7 +1519,7 @@ components:
                                 type: array
                                 items:
                                   type: object
-              createdAt:
+              created_at:
                 type: string
                 format: date-time
           commits:
@@ -1663,7 +1734,7 @@ components:
                             type: object
                             additionalProperties: true
                     discriminator: op
-                createdAt:
+                created_at:
                   type: string
                   format: date-time
     Snapshot:
@@ -1673,7 +1744,7 @@ components:
         required:
           - version
           - body
-          - createdAt
+          - created_at
         properties:
           version:
             type: integer
@@ -1737,7 +1808,7 @@ components:
                             type: array
                             items:
                               type: object
-          createdAt:
+          created_at:
             type: string
             format: date-time
     Commit:
@@ -1951,7 +2022,7 @@ components:
                       type: object
                       additionalProperties: true
               discriminator: op
-          createdAt:
+          created_at:
             type: string
             format: date-time
     CommitError:
@@ -1959,19 +2030,19 @@ components:
       schema:
         type: object
         required:
-          - code
           - message
         properties:
-          code:
-            type: string
-            enum:
-              - STALE_PREVIOUS
-              - UNAUTHORIZED
-              - NOT_FOUND
-            example: STALE_PREVIOUS
           message:
             type: string
-            example: 'Commit rejected: previous=3 but current HEAD=5'
+            description: Human-readable error description
+            example: Commit failed, please retry
+          errors:
+            type: array
+            description: Validation errors (present only when changes are invalid)
+            items:
+              type: string
+            example:
+              - '[0] parentId must be a non-empty string'
     CommitRequestPayload:
       schemaFormat: application/vnd.aai.asyncapi+yaml;version=3.0.0
       schema:
@@ -2186,9 +2257,9 @@ components:
       schema:
         type: object
         required:
-          - canvaId
+          - canva_id
         properties:
-          canvaId:
+          canva_id:
             type: string
             format: uuid
             example: 3fa85f64-5717-4562-b3fc-2c963f66afa6

@@ -132,7 +132,7 @@ paths:
     $ref: './spec/project/paths/ProjectInvites.yaml'
 
   # canvases
-  /webster/v1/projects/{projectId}/canvases:
+  /webster/v1/canvases:
     $ref: './spec/canva/paths/Canvases.yaml'
-  /webster/v1/projects/{projectId}/canvases/{id}:
+  /webster/v1/canvases/{id}:
     $ref: './spec/canva/paths/CanvaById.yaml'
