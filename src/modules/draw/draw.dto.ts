@@ -13,8 +13,9 @@ import { Type } from 'class-transformer';
 import { Op } from '@paranoideed/drawebster';
 
 const ALLOWED_CLASS_NAMES = [
-	'Rect', 'Circle', 'Text', 'Line', 'Image',
+	'Rect', 'Circle', 'Ellipse', 'Text', 'Line', 'Image',
 	'Arrow', 'Star', 'Path', 'Group', 'RegularPolygon',
+	'Arc', 'Ring', 'Wedge',
 ] as const;
 
 export class KonvaNodeDto {

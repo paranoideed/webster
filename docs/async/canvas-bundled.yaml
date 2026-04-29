@@ -123,6 +123,21 @@ channels:
                                 properties:
                                   className:
                                     type: string
+                                    enum:
+                                      - Rect
+                                      - Circle
+                                      - Ellipse
+                                      - Text
+                                      - Line
+                                      - Image
+                                      - Arrow
+                                      - Star
+                                      - Path
+                                      - Group
+                                      - RegularPolygon
+                                      - Arc
+                                      - Ring
+                                      - Wedge
                                     example: Rect
                                   attrs:
                                     type: object
@@ -180,6 +195,21 @@ channels:
                                 properties:
                                   className:
                                     type: string
+                                    enum:
+                                      - Rect
+                                      - Circle
+                                      - Ellipse
+                                      - Text
+                                      - Line
+                                      - Image
+                                      - Arrow
+                                      - Star
+                                      - Path
+                                      - Group
+                                      - RegularPolygon
+                                      - Arc
+                                      - Ring
+                                      - Wedge
                                     example: Rect
                                   attrs:
                                     type: object
@@ -285,6 +315,21 @@ channels:
                                       properties:
                                         className:
                                           type: string
+                                          enum:
+                                            - Rect
+                                            - Circle
+                                            - Ellipse
+                                            - Text
+                                            - Line
+                                            - Image
+                                            - Arrow
+                                            - Star
+                                            - Path
+                                            - Group
+                                            - RegularPolygon
+                                            - Arc
+                                            - Ring
+                                            - Wedge
                                           example: Rect
                                         attrs:
                                           type: object
@@ -445,6 +490,21 @@ channels:
                           properties:
                             className:
                               type: string
+                              enum:
+                                - Rect
+                                - Circle
+                                - Ellipse
+                                - Text
+                                - Line
+                                - Image
+                                - Arrow
+                                - Star
+                                - Path
+                                - Group
+                                - RegularPolygon
+                                - Arc
+                                - Ring
+                                - Wedge
                               example: Rect
                             attrs:
                               type: object
@@ -550,6 +610,21 @@ channels:
                                 properties:
                                   className:
                                     type: string
+                                    enum:
+                                      - Rect
+                                      - Circle
+                                      - Ellipse
+                                      - Text
+                                      - Line
+                                      - Image
+                                      - Arrow
+                                      - Star
+                                      - Path
+                                      - Group
+                                      - RegularPolygon
+                                      - Arc
+                                      - Ring
+                                      - Wedge
                                     example: Rect
                                   attrs:
                                     type: object
@@ -696,6 +771,21 @@ channels:
                           properties:
                             className:
                               type: string
+                              enum:
+                                - Rect
+                                - Circle
+                                - Ellipse
+                                - Text
+                                - Line
+                                - Image
+                                - Arrow
+                                - Star
+                                - Path
+                                - Group
+                                - RegularPolygon
+                                - Arc
+                                - Ring
+                                - Wedge
                               example: Rect
                             attrs:
                               type: object
@@ -801,6 +891,21 @@ channels:
                                 properties:
                                   className:
                                     type: string
+                                    enum:
+                                      - Rect
+                                      - Circle
+                                      - Ellipse
+                                      - Text
+                                      - Line
+                                      - Image
+                                      - Arrow
+                                      - Star
+                                      - Path
+                                      - Group
+                                      - RegularPolygon
+                                      - Arc
+                                      - Ring
+                                      - Wedge
                                     example: Rect
                                   attrs:
                                     type: object
@@ -1003,6 +1108,21 @@ channels:
                                 properties:
                                   className:
                                     type: string
+                                    enum:
+                                      - Rect
+                                      - Circle
+                                      - Ellipse
+                                      - Text
+                                      - Line
+                                      - Image
+                                      - Arrow
+                                      - Star
+                                      - Path
+                                      - Group
+                                      - RegularPolygon
+                                      - Arc
+                                      - Ring
+                                      - Wedge
                                     example: Rect
                                   attrs:
                                     type: object
@@ -1060,6 +1180,21 @@ channels:
                                 properties:
                                   className:
                                     type: string
+                                    enum:
+                                      - Rect
+                                      - Circle
+                                      - Ellipse
+                                      - Text
+                                      - Line
+                                      - Image
+                                      - Arrow
+                                      - Star
+                                      - Path
+                                      - Group
+                                      - RegularPolygon
+                                      - Arc
+                                      - Ring
+                                      - Wedge
                                     example: Rect
                                   attrs:
                                     type: object
@@ -1165,6 +1300,21 @@ channels:
                                       properties:
                                         className:
                                           type: string
+                                          enum:
+                                            - Rect
+                                            - Circle
+                                            - Ellipse
+                                            - Text
+                                            - Line
+                                            - Image
+                                            - Arrow
+                                            - Star
+                                            - Path
+                                            - Group
+                                            - RegularPolygon
+                                            - Arc
+                                            - Ring
+                                            - Wedge
                                           example: Rect
                                         attrs:
                                           type: object
@@ -1506,6 +1656,21 @@ components:
                             properties:
                               className:
                                 type: string
+                                enum:
+                                  - Rect
+                                  - Circle
+                                  - Ellipse
+                                  - Text
+                                  - Line
+                                  - Image
+                                  - Arrow
+                                  - Star
+                                  - Path
+                                  - Group
+                                  - RegularPolygon
+                                  - Arc
+                                  - Ring
+                                  - Wedge
                                 example: Rect
                               attrs:
                                 type: object
@@ -1563,6 +1728,21 @@ components:
                             properties:
                               className:
                                 type: string
+                                enum:
+                                  - Rect
+                                  - Circle
+                                  - Ellipse
+                                  - Text
+                                  - Line
+                                  - Image
+                                  - Arrow
+                                  - Star
+                                  - Path
+                                  - Group
+                                  - RegularPolygon
+                                  - Arc
+                                  - Ring
+                                  - Wedge
                                 example: Rect
                               attrs:
                                 type: object
@@ -1668,6 +1848,21 @@ components:
                                   properties:
                                     className:
                                       type: string
+                                      enum:
+                                        - Rect
+                                        - Circle
+                                        - Ellipse
+                                        - Text
+                                        - Line
+                                        - Image
+                                        - Arrow
+                                        - Star
+                                        - Path
+                                        - Group
+                                        - RegularPolygon
+                                        - Arc
+                                        - Ring
+                                        - Wedge
                                       example: Rect
                                     attrs:
                                       type: object
@@ -1795,6 +1990,21 @@ components:
                         properties:
                           className:
                             type: string
+                            enum:
+                              - Rect
+                              - Circle
+                              - Ellipse
+                              - Text
+                              - Line
+                              - Image
+                              - Arrow
+                              - Star
+                              - Path
+                              - Group
+                              - RegularPolygon
+                              - Arc
+                              - Ring
+                              - Wedge
                             example: Rect
                           attrs:
                             type: object
@@ -1851,6 +2061,21 @@ components:
                       properties:
                         className:
                           type: string
+                          enum:
+                            - Rect
+                            - Circle
+                            - Ellipse
+                            - Text
+                            - Line
+                            - Image
+                            - Arrow
+                            - Star
+                            - Path
+                            - Group
+                            - RegularPolygon
+                            - Arc
+                            - Ring
+                            - Wedge
                           example: Rect
                         attrs:
                           type: object
@@ -1956,6 +2181,21 @@ components:
                             properties:
                               className:
                                 type: string
+                                enum:
+                                  - Rect
+                                  - Circle
+                                  - Ellipse
+                                  - Text
+                                  - Line
+                                  - Image
+                                  - Arrow
+                                  - Star
+                                  - Path
+                                  - Group
+                                  - RegularPolygon
+                                  - Arc
+                                  - Ring
+                                  - Wedge
                                 example: Rect
                               attrs:
                                 type: object
@@ -2081,6 +2321,21 @@ components:
                       properties:
                         className:
                           type: string
+                          enum:
+                            - Rect
+                            - Circle
+                            - Ellipse
+                            - Text
+                            - Line
+                            - Image
+                            - Arrow
+                            - Star
+                            - Path
+                            - Group
+                            - RegularPolygon
+                            - Arc
+                            - Ring
+                            - Wedge
                           example: Rect
                         attrs:
                           type: object
@@ -2186,6 +2441,21 @@ components:
                             properties:
                               className:
                                 type: string
+                                enum:
+                                  - Rect
+                                  - Circle
+                                  - Ellipse
+                                  - Text
+                                  - Line
+                                  - Image
+                                  - Arrow
+                                  - Star
+                                  - Path
+                                  - Group
+                                  - RegularPolygon
+                                  - Arc
+                                  - Ring
+                                  - Wedge
                                 example: Rect
                               attrs:
                                 type: object
@@ -2288,6 +2558,21 @@ components:
                 properties:
                   className:
                     type: string
+                    enum:
+                      - Rect
+                      - Circle
+                      - Ellipse
+                      - Text
+                      - Line
+                      - Image
+                      - Arrow
+                      - Star
+                      - Path
+                      - Group
+                      - RegularPolygon
+                      - Arc
+                      - Ring
+                      - Wedge
                     example: Rect
                   attrs:
                     type: object
@@ -2393,6 +2678,21 @@ components:
                       properties:
                         className:
                           type: string
+                          enum:
+                            - Rect
+                            - Circle
+                            - Ellipse
+                            - Text
+                            - Line
+                            - Image
+                            - Arrow
+                            - Star
+                            - Path
+                            - Group
+                            - RegularPolygon
+                            - Arc
+                            - Ring
+                            - Wedge
                           example: Rect
                         attrs:
                           type: object
@@ -2483,6 +2783,21 @@ components:
             properties:
               className:
                 type: string
+                enum:
+                  - Rect
+                  - Circle
+                  - Ellipse
+                  - Text
+                  - Line
+                  - Image
+                  - Arrow
+                  - Star
+                  - Path
+                  - Group
+                  - RegularPolygon
+                  - Arc
+                  - Ring
+                  - Wedge
                 example: Rect
               attrs:
                 type: object
@@ -2603,6 +2918,21 @@ components:
                   properties:
                     className:
                       type: string
+                      enum:
+                        - Rect
+                        - Circle
+                        - Ellipse
+                        - Text
+                        - Line
+                        - Image
+                        - Arrow
+                        - Star
+                        - Path
+                        - Group
+                        - RegularPolygon
+                        - Arc
+                        - Ring
+                        - Wedge
                       example: Rect
                     attrs:
                       type: object
@@ -2740,6 +3070,21 @@ components:
                     properties:
                       className:
                         type: string
+                        enum:
+                          - Rect
+                          - Circle
+                          - Ellipse
+                          - Text
+                          - Line
+                          - Image
+                          - Arrow
+                          - Star
+                          - Path
+                          - Group
+                          - RegularPolygon
+                          - Arc
+                          - Ring
+                          - Wedge
                         example: Rect
                       attrs:
                         type: object
@@ -2784,6 +3129,21 @@ components:
               properties:
                 className:
                   type: string
+                  enum:
+                    - Rect
+                    - Circle
+                    - Ellipse
+                    - Text
+                    - Line
+                    - Image
+                    - Arrow
+                    - Star
+                    - Path
+                    - Group
+                    - RegularPolygon
+                    - Arc
+                    - Ring
+                    - Wedge
                   example: Rect
                 attrs:
                   type: object
@@ -2807,6 +3167,21 @@ components:
         properties:
           className:
             type: string
+            enum:
+              - Rect
+              - Circle
+              - Ellipse
+              - Text
+              - Line
+              - Image
+              - Arrow
+              - Star
+              - Path
+              - Group
+              - RegularPolygon
+              - Arc
+              - Ring
+              - Wedge
             example: Rect
           attrs:
             type: object
