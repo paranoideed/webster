@@ -1,1 +1,1 @@
-export const USERNAME_PATTERN = /^[a-zA-Z0-9\-._!]+$/;
+export const USERNAME_PATTERN = /^[\p{L}0-9\-._!]+$/u;
