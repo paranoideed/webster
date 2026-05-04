@@ -1,0 +1,42 @@
+type: object
+required:
+  - id
+  - type
+  - attributes
+properties:
+  id:
+    type: string
+    format: uuid
+  type:
+    type: string
+    enum: [ image ]
+  attributes:
+    type: object
+    required:
+      - name
+      - url
+      - mime_type
+      - public
+      - created_at
+    properties:
+      account_id:
+        type: string
+        format: uuid
+        nullable: true
+        description: Owner account ID; null for public images
+      name:
+        type: string
+        example: my-photo.jpg
+      url:
+        type: string
+        format: uri
+        example: https://bucket.s3.region.amazonaws.com/images/account-id/uuid.jpg
+      mime_type:
+        type: string
+        enum: [ image/jpeg, image/png, image/webp, image/svg+xml ]
+      public:
+        type: boolean
+        description: True for system preset images, false for user-uploaded images
+      created_at:
+        type: string
+        format: date-time

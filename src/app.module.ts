@@ -8,6 +8,7 @@ import { ProjectModule } from "./modules/project/project.module";
 import { CanvaModule } from "./modules/canva/canva.module";
 import { DrawModule } from "./modules/draw/draw.module";
 import { TemplateModule } from "./modules/templates/template.module";
+import { ImageModule } from "./modules/images/image.module";
 import { database } from "src/db/data-source";
 import { cassandraDatabase } from "src/db/cassandra/cassandra.client";
 
@@ -20,6 +21,7 @@ import { cassandraDatabase } from "src/db/cassandra/cassandra.client";
 		CanvaModule,
 		DrawModule,
 		TemplateModule,
+		ImageModule,
 	],
 	controllers: [AppController],
 	providers: [AppService]

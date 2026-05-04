@@ -96,6 +96,14 @@ components:
     TemplatesCollection:
       $ref: './spec/template/schemas/TemplatesCollection.yaml'
 
+    # images
+    Image:
+      $ref: './spec/images/schemas/Image.yaml'
+    ImageData:
+      $ref: './spec/images/schemas/ImageData.yaml'
+    ImagesCollection:
+      $ref: './spec/images/schemas/ImagesCollection.yaml'
+
 paths:
   # auth
   /webster/v1/accounts/registration:
@@ -154,3 +162,9 @@ paths:
     $ref: './spec/template/paths/Templates.yaml'
   /webster/v1/templates/{id}:
     $ref: './spec/template/paths/TemplateById.yaml'
+
+  # images
+  /webster/v1/images:
+    $ref: './spec/images/paths/Images.yaml'
+  /webster/v1/images/{id}:
+    $ref: './spec/images/paths/ImageById.yaml'
