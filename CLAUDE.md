@@ -108,6 +108,15 @@ TypeORM with PostgreSQL. The `database` singleton in `data-source.ts` is initial
 - `canva.dto.ts` contains both CRUD DTOs and `CommitDto` with discriminated union validation via `class-transformer` discriminator on `op` field.  
 - Canvas content (snapshots + commits) lives in Cassandra — not yet wired (next task).
 
+**templates** — canvas templates  
+- `GET /templates` — paginated list of public (system) + user's private templates.  
+- `GET /templates/:id` — single template (public accessible to all, private only to owner).  
+- `POST /templates` — create private template; body accepts a `KonvaStageConfig` object (stored as `jsonb`).  
+- `PATCH /templates/:id` — rename own template.  
+- `DELETE /templates/:id` — soft-delete own template.  
+- Public templates are seeded in migration `1774300000000-AddTemplates.ts` (`public = true`, `account_id = NULL`); no user can create public templates.  
+- CHECK constraint enforces `NOT (public = true AND account_id IS NOT NULL)`.
+
 **mail** (`src/modules/mail/`)  
 - Nodemailer transporter, HTML emails via a private `wrap()` helper.  
 - Called fire-and-forget (`void this.mail.*`) so email failures never break the main flow.

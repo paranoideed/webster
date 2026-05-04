@@ -1,0 +1,37 @@
+type: object
+required:
+  - id
+  - type
+  - attributes
+properties:
+  id:
+    type: string
+    format: uuid
+  type:
+    type: string
+    enum: [ template ]
+  attributes:
+    type: object
+    required:
+      - name
+      - body
+      - public
+      - created_at
+    properties:
+      account_id:
+        type: string
+        format: uuid
+        nullable: true
+        description: Owner account ID; null for public templates
+      name:
+        type: string
+        example: My template
+      body:
+        type: object
+        description: KonvaStageConfig snapshot object
+      public:
+        type: boolean
+        description: True for system templates, false for user-owned templates
+      created_at:
+        type: string
+        format: date-time

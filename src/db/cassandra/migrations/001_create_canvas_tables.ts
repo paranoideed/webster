@@ -1,5 +1,4 @@
 import { Client } from 'cassandra-driver';
-import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export const name = '001_create_canvas_tables';
 

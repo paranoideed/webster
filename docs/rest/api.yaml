@@ -84,6 +84,18 @@ components:
     CanvasCollection:
       $ref: './spec/canva/schemas/CanvasCollection.yaml'
 
+    # template
+    CreateTemplate:
+      $ref: './spec/template/schemas/CreateTemplate.yaml'
+    UpdateTemplate:
+      $ref: './spec/template/schemas/UpdateTemplate.yaml'
+    Template:
+      $ref: './spec/template/schemas/Template.yaml'
+    TemplateData:
+      $ref: './spec/template/schemas/TemplateData.yaml'
+    TemplatesCollection:
+      $ref: './spec/template/schemas/TemplatesCollection.yaml'
+
 paths:
   # auth
   /webster/v1/accounts/registration:
@@ -136,3 +148,9 @@ paths:
     $ref: './spec/canva/paths/Canvases.yaml'
   /webster/v1/canvases/{id}:
     $ref: './spec/canva/paths/CanvaById.yaml'
+
+  # templates
+  /webster/v1/templates:
+    $ref: './spec/template/paths/Templates.yaml'
+  /webster/v1/templates/{id}:
+    $ref: './spec/template/paths/TemplateById.yaml'

@@ -1,0 +1,54 @@
+post:
+  tags:
+    - templates
+  summary: Upload template preview
+  description: >
+    Uploads a preview image for a private template (replaces existing one).
+    Only the owner can upload a preview.
+    Max file size: 5 MB.
+  security:
+    - cookieAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          type: object
+          required:
+            - file
+          properties:
+            file:
+              type: string
+              format: binary
+  responses:
+    '200':
+      description: Preview uploaded; returns updated template.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/Template.yaml'
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Not the owner or template is public.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '404':
+      description: Template not found.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
