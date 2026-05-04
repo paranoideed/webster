@@ -1349,6 +1349,378 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Errors'
+  /webster/v1/templates:
+    get:
+      tags:
+        - templates
+      summary: List templates
+      description: |
+        Returns a paginated list of all public (system) templates plus the authenticated user's private templates.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: page[limit]
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: page[offset]
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - newest
+              - oldest
+            default: newest
+      responses:
+        '200':
+          description: List of templates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplatesCollection'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    post:
+      tags:
+        - templates
+      summary: Create a private template
+      description: Creates a new private template owned by the authenticated user.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplate'
+      responses:
+        '201':
+          description: Template created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/templates/{id}:
+    get:
+      tags:
+        - templates
+      summary: Get a template
+      description: Returns a single template. Public templates are accessible to all authenticated users; private templates only to their owner.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Template found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Not the owner of a private template.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Template not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    patch:
+      tags:
+        - templates
+      summary: Update template name
+      description: Renames a private template. Only the owner can rename it.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplate'
+      responses:
+        '200':
+          description: Template updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Not the owner or template is public.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Template not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    delete:
+      tags:
+        - templates
+      summary: Delete a private template
+      description: |
+        Permanently soft-deletes a private template. Only the owner can delete their template; public templates cannot be deleted.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Template deleted.
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Not the owner or template is public.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Template not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/images:
+    get:
+      tags:
+        - images
+      summary: List images
+      description: |
+        Returns a paginated list of all public (system preset) images plus the authenticated user's own uploaded images.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: page[limit]
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: page[offset]
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - newest
+              - oldest
+            default: newest
+      responses:
+        '200':
+          description: List of images.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImagesCollection'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    post:
+      tags:
+        - images
+      summary: Upload an image
+      description: |
+        Uploads an image file to S3 and creates a private image record owned by the authenticated user. Supported formats: JPEG, PNG, WebP, SVG. Max size: 10 MB. Pass an optional `name` query parameter to override the display name (defaults to the original filename).
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 255
+          description: Display name for the image (defaults to original filename)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, WebP, or SVG; max 10 MB)
+      responses:
+        '201':
+          description: Image uploaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+        '400':
+          description: Unsupported file type or file too large.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+  /webster/v1/images/{id}:
+    get:
+      tags:
+        - images
+      summary: Get an image
+      description: |
+        Returns a single image. Public images are accessible to all authenticated users; private images only to their owner.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Image found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Not the owner of a private image.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Image not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+    delete:
+      tags:
+        - images
+      summary: Delete an image
+      description: |
+        Soft-deletes a private image and removes the file from S3. Only the owner can delete their image; public images cannot be deleted.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Image deleted.
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '403':
+          description: Not the owner or image is public.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
+        '404':
+          description: Image not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Errors'
 components:
   securitySchemes:
     cookieAuth:
@@ -2024,6 +2396,185 @@ components:
               type: string
               format: uri
               nullable: true
+    CreateTemplate:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - attributes
+          properties:
+            type:
+              type: string
+              enum:
+                - template
+            attributes:
+              type: object
+              required:
+                - name
+                - body
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  example: My template
+                body:
+                  type: object
+                  description: KonvaStageConfig snapshot object
+    UpdateTemplate:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - attributes
+          properties:
+            type:
+              type: string
+              enum:
+                - template
+            attributes:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  example: New name
+    Template:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/TemplateData'
+    TemplateData:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - template
+        attributes:
+          type: object
+          required:
+            - name
+            - body
+            - public
+            - created_at
+          properties:
+            account_id:
+              type: string
+              format: uuid
+              nullable: true
+              description: Owner account ID; null for public templates
+            name:
+              type: string
+              example: My template
+            body:
+              type: object
+              description: KonvaStageConfig snapshot object
+            public:
+              type: boolean
+              description: True for system templates, false for user-owned templates
+            created_at:
+              type: string
+              format: date-time
+    TemplatesCollection:
+      type: object
+      required:
+        - data
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateData'
+        links:
+          $ref: '#/components/schemas/PaginationData'
+    Image:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/ImageData'
+    ImageData:
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - image
+        attributes:
+          type: object
+          required:
+            - name
+            - url
+            - mime_type
+            - public
+            - created_at
+          properties:
+            account_id:
+              type: string
+              format: uuid
+              nullable: true
+              description: Owner account ID; null for public images
+            name:
+              type: string
+              example: my-photo.jpg
+            url:
+              type: string
+              format: uri
+              example: https://bucket.s3.region.amazonaws.com/images/account-id/uuid.jpg
+            mime_type:
+              type: string
+              enum:
+                - image/jpeg
+                - image/png
+                - image/webp
+                - image/svg+xml
+            public:
+              type: boolean
+              description: True for system preset images, false for user-uploaded images
+            created_at:
+              type: string
+              format: date-time
+    ImagesCollection:
+      type: object
+      required:
+        - data
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageData'
+        links:
+          $ref: '#/components/schemas/PaginationData'
     PaginationData:
       type: object
       required:

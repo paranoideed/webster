@@ -29,7 +29,7 @@ npm run cassandra:migrate:up     # create keyspace + run pending migrations
 npm run cassandra:migrate:down   # revert last migration
 
 # API docs
-npm run docs:bundle        # bundle docs/rest/api.yaml → docs/rest/api-bundled.yaml
+npm run docs:bundle:rest   # bundle docs/rest/api.yaml → docs/rest/api-bundled.yaml
 npm run docs:bundle:async  # bundle docs/async/canvas.yaml → docs/async/canvas-bundled.yaml
 ```
 
@@ -84,47 +84,57 @@ TypeORM with PostgreSQL. The `database` singleton in `data-source.ts` is initial
 
 ### Modules (`src/modules/`)
 
-**auth** — accounts, authentication  
-- Email/password registration creates an `Account` + `Profile` in a transaction.  
-- Passwords are stored as `salt$hash$keylen` (custom `Hasher`).  
-- Google OAuth: redirect → Google → callback exchanges `code` for `id_token`; auto-creates account if new.  
-- `JwtAccessStrategy` (`jwt-access`) and `JwtRefreshStrategy` (`jwt-refresh`) both extract tokens from cookies. `req.user` is `{ id, role }` (access) or `{ id }` (refresh).  
-- Guards: `JwtGuard`, `JwtRefreshGuard`, `OptionalJwtGuard` (in `shared/jwt.guard.ts`).  
+**auth** — accounts, authentication
+- Email/password registration creates an `Account` + `Profile` in a transaction.
+- Passwords are stored as `salt$hash$keylen` (custom `Hasher`).
+- Google OAuth: redirect → Google → callback exchanges `code` for `id_token`; auto-creates account if new.
+- `JwtAccessStrategy` (`jwt-access`) and `JwtRefreshStrategy` (`jwt-refresh`) both extract tokens from cookies. `req.user` is `{ id, role }` (access) or `{ id }` (refresh).
+- Guards: `JwtGuard`, `JwtRefreshGuard`, `OptionalJwtGuard` (in `shared/jwt.guard.ts`).
 - Email verification uses a 6-digit OTP stored in `email_verifications`, expires in 5 min.
 
-**profile** — user profiles  
-- 1-to-1 with `Account` (created in the same transaction as the account).  
+**profile** — user profiles
+- 1-to-1 with `Account` (created in the same transaction as the account).
 - Avatar stored in S3 (`user/{accountId}/avatar_{timestamp}`); old key deleted on update.
 
-**project** — projects and members  
-- Members have roles: `owner`, `editor`, `viewer`.  
-- Project creation atomically adds the creator as `owner`.  
-- Invites (`ProjectInvite`) are 64-char hex tokens, expire in 24 h, sent by email.  
+**project** — projects and members
+- Members have roles: `owner`, `editor`, `viewer`.
+- Project creation atomically adds the creator as `owner`.
+- Invites (`ProjectInvite`) are 64-char hex tokens, expire in 24 h, sent by email.
 - Accepting an invite checks the invitee email matches the authenticated account email.
 
-**canva** — canvas metadata + commit validation  
-- Canvases are nested under projects: `/projects/:projectId/canvases`.  
-- Access: any member can read; `owner` / `editor` can create, update, delete.  
-- `canva.dto.ts` contains both CRUD DTOs and `CommitDto` with discriminated union validation via `class-transformer` discriminator on `op` field.  
-- Canvas content (snapshots + commits) lives in Cassandra — not yet wired (next task).
+**canva** — canvas metadata (HTTP CRUD)
+- Canvases are nested under projects: `/projects/:projectId/canvases`.
+- Access: any member can read; `owner` / `editor` can create, update, delete.
+- On create, `cassandra.initCanvas(canva.id)` inserts snapshot version 0 (empty stage).
+- Canvas content (snapshots + commits) lives in Cassandra, accessed via the `draw` WebSocket module.
 
-**templates** — canvas templates  
-- `GET /templates` — paginated list of public (system) + user's private templates.  
-- `GET /templates/:id` — single template (public accessible to all, private only to owner).  
-- `POST /templates` — create private template; body accepts a `KonvaStageConfig` object (stored as `jsonb`).  
-- `PATCH /templates/:id` — rename own template.  
-- `DELETE /templates/:id` — soft-delete own template.  
-- Public templates are seeded in migration `1774300000000-AddTemplates.ts` (`public = true`, `account_id = NULL`); no user can create public templates.  
+**draw** — WebSocket gateway for real-time canvas editing
+- Socket.IO namespace `/canvas`. JWT auth via cookie parsed in `afterInit` middleware.
+- `join` → verify member access → emit `joined` with `{ snapshot, commits[] }`.
+- `commit` → verify editor/owner → validate ops → INSERT IF NOT EXISTS (up to 5 retries) → broadcast `commit:ack`; if snapshot boundary hit, broadcast `snapshot`.
+- `undo` / `redo` → validate head is within snapshot boundary → broadcast `{ head }` to all in room.
+- Operation DTOs use discriminated union on `op` field (`draw.dto.ts`).
+
+**images** — image asset library (TO BE BUILT — see plan below)
+
+**templates** — canvas templates
+- `GET /templates` — paginated list of public (system) + user's private templates.
+- `GET /templates/:id` — single template (public accessible to all, private only to owner).
+- `POST /templates` — create private template; body accepts a `KonvaStageConfig` object (stored as `jsonb`).
+- `PATCH /templates/:id` — rename own template.
+- `DELETE /templates/:id` — soft-delete own template.
+- Public templates are seeded in migration `1774300000000-AddTemplates.ts` (`public = true`, `account_id = NULL`); no user can create public templates.
 - CHECK constraint enforces `NOT (public = true AND account_id IS NOT NULL)`.
 
-**mail** (`src/modules/mail/`)  
-- Nodemailer transporter, HTML emails via a private `wrap()` helper.  
+**mail** (`src/modules/mail/`)
+- Nodemailer transporter, HTML emails via a private `wrap()` helper.
 - Called fire-and-forget (`void this.mail.*`) so email failures never break the main flow.
 
-**shared** (`src/modules/shared/`)  
-- `S3Service` — lazy S3Client init, `putObject`, `putProfileAvatar`, `deleteObject`.  
-- `GlobalExceptionFilter` — catches all exceptions, logs 5xx with stack trace, returns JSON:API-style error body.  
-- `CurrentUser` decorator — extracts `req.user` from the execution context.  
+**shared** (`src/modules/shared/`)
+- `S3Service` — lazy S3Client init, `putObject`, `putProfileAvatar`, `deleteObject`. `putObject(buffer, contentType, destination)` returns `{ url }`.
+- `GlobalExceptionFilter` — catches all exceptions, logs 5xx with stack trace, returns JSON:API-style error body.
+- `WsExceptionFilter` — maps WS exceptions to typed error events (`commit:error`, `undo:error`, `redo:error`).
+- `CurrentUser` decorator — extracts `req.user` from the execution context.
 - `NullIfEmpty` transformer — converts empty strings to `null` in DTOs.
 - `AppLogger` — custom logger wrapping NestJS Logger.
 
@@ -134,87 +144,144 @@ Each module has:
 - `*.response.ts` — plain functions that map entities to the API response shape
 - `*.types.ts` — shared TypeScript types / enums
 
-### Draw library (`src/draw/`)
-Pure TypeScript library for canvas state management — shared logic between backend and frontend:
-- `operation.ts` — `Op` constants (`as const`) + `Operation` discriminated union type
-- `commit.ts` — `Commit` interface `{ number, previous, changes: Operation[] }`
-- `build-snapshot.ts` — `buildSnapshot(snapshot, commits[]) → newSnapshot`; uses handler-map pattern (one function per op), deep-clones input, never mutates. Also exports `KonvaStageConfig`, `KonvaLayerConfig`, `KonvaNodeConfig`.
+### Draw library (`@paranoideed/drawebster`)
+npm package shared between backend and frontend. Source lives outside this repo.
+- `Op` constants + `Operation` discriminated union type (10 op types)
+- `Commit` interface `{ number, previous, changes: Operation[] }`
+- `buildSnapshot(snapshot, commits[]) → newSnapshot` — handler-map pattern, deep-clones, never mutates
+- `KonvaStageConfig`, `KonvaLayerConfig`, `KonvaNodeConfig` interfaces
+- `validateCommitChanges(changes) → { valid, errors[] }` — used in gateway before persisting
 
-Undo/redo are **not commits** — they are separate WebSocket events (`undo`, `redo`) with `{ head: number }`. Each client keeps a local `head` pointer and re-renders via `buildSnapshot(snapshot, commits.slice(0, head))`. Server broadcasts the event to all room members.
+Undo/redo are **not commits** — separate WS events with `{ head: number }`. Each client keeps a local `head` pointer and re-renders via `buildSnapshot(snapshot, commits.slice(0, head))`. Server broadcasts to all room members.
+
+### Canvas storage (Cassandra + Event Sourcing)
+
+Cassandra tables (keyspace `webster`):
+```cql
+snapshots: PRIMARY KEY (canva_id, version DESC)  -- body is full Konva stage JSON
+commits:   PRIMARY KEY (canva_id, number DESC)   -- changes is Operation[] JSON, previous forms linked list
+```
+
+Key rules:
+- **Never UPDATE** — only INSERT. `IF NOT EXISTS` for optimistic concurrency on commits.
+- `canva_id` = partition key, all canvas data on one node.
+- Snapshot version `k` covers canvas state at commit `k * n` (n = `SNAPSHOT_INTERVAL`).
+- New snapshot triggered at commit `2n`, `3n`, `4n`, … (always `n` commits behind HEAD).
+- `CassandraService` (`src/db/cassandra/cassandra.service.ts`) owns all Cassandra logic.
+
+### Naming conventions
+- REST request/response bodies: **snake_case**
+- WebSocket payloads: **snake_case**
+- OpenAPI and AsyncAPI schemas: **snake_case**
 
 ### API docs
 REST (OpenAPI) specs live in `docs/rest/` (split by domain), bundled into `docs/rest/api-bundled.yaml` with Redocly CLI. The Swagger UI container serves the bundled file.
 
 AsyncAPI (WebSocket) spec lives in `docs/async/canvas.yaml` (split into spec/messages and spec/schemas). Bundle with `npm run docs:bundle:async` → `docs/async/canvas-bundled.yaml`. Served via nginx on `ASYNC_DOCS_PORT` (default 3001).
 
-## Canvas Architecture (Cassandra + Event Sourcing)
+---
 
-### Overview
-Canvas history is stored in Apache Cassandra using event sourcing. The driver is **cassandra-driver** (no ORM). Communication with the frontend is over **WebSocket**.
+## Implementation Plan: Images Module
 
-### Cassandra Tables
+Images work exactly like templates: public preset images (seeded, no owner) + user's private uploaded images. The key difference — content lives in S3, not jsonb. PostgreSQL stores only metadata + S3 key.
 
-```cql
-CREATE TABLE snapshots (
-  canva_id   UUID,
-  version    INT,
-  body       TEXT,
-  created_at TIMESTAMP,
-  PRIMARY KEY (canva_id, version)
-) WITH CLUSTERING ORDER BY (version DESC);
+### Supported formats
+- Upload: JPEG (`image/jpeg`), PNG (`image/png`), WebP (`image/webp`), SVG (`image/svg+xml`)
+- Export: frontend-only, no backend changes needed (see Export section below)
 
-CREATE TABLE commits (
-  canva_id   UUID,
-  number     INT,
-  previous   INT,
-  changes    TEXT,
-  created_at TIMESTAMP,
-  PRIMARY KEY (canva_id, number)
-) WITH CLUSTERING ORDER BY (number DESC);
+### Step 1 — Migration `src/db/migrations/1774400000000-AddImages.ts`
+
+```sql
+CREATE TABLE images (
+  id          uuid NOT NULL DEFAULT uuid_generate_v4(),
+  account_id  uuid,
+  name        character varying(255) NOT NULL,
+  s3_key      character varying(512) NOT NULL,
+  mime_type   character varying(100) NOT NULL,
+  public      boolean NOT NULL DEFAULT false,
+  created_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  deleted_at  TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT PK_images PRIMARY KEY (id),
+  CONSTRAINT CHK_images_public_no_account
+    CHECK (NOT (public = true AND account_id IS NOT NULL))
+);
+
+ALTER TABLE images ADD CONSTRAINT FK_images_account_id
+  FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE;
 ```
 
-### Key design decisions
+Public preset images are seeded in this migration with hardcoded S3 keys pointing to files that must be uploaded to S3 beforehand. S3 key pattern for presets: `images/public/{name}.{ext}`. At minimum seed 5–10 diverse stock images (landscape, portrait, abstract, etc.) — ask the user what images to seed or just create the table without seed data and add presets manually later.
 
-- `canva_id` is the **partition key** — all data for one canvas lives on one node.
-- `number` / `version` are **clustering keys** — data is sorted on disk, `LIMIT 1 DESC` is fast.
-- **No foreign keys, no joins, no transactions** — all business logic in the NestJS service.
-- **No UPDATE ever** — only INSERT. `IF NOT EXISTS` is used for optimistic concurrency on commits.
-- `previous` in commits is a regular field (not CK) forming a **linked list** for undo/redo traversal.
+### Step 2 — Entity `src/db/entity/image.entity.ts`
 
-### Snapshot strategy
+Mirror `template.entity.ts` structure. Fields: `id`, `accountId` (nullable), `name`, `s3Key`, `mimeType`, `public`, `createdAt`, `deletedAt`. Column names: `account_id`, `s3_key`, `mime_type`. Entity name: `images`.
 
-`n` is a constant (e.g. 10).
+### Step 3 — Module files `src/modules/images/`
 
-| Event | Action |
-|---|---|
-| Canvas created | Insert snapshot version 0 (empty body) |
-| commit `number == 2n` | Compute snapshot at commit `n`: `applyChanges(snapshot[v-1].body, commits[1..n])` → insert snapshot version 1 |
-| commit `number == k*n` (k ≥ 3) | Compute snapshot at commit `(k-1)*n` → insert snapshot version k-1 |
+**`image.service.ts`** — methods:
+- `getImages(accountId, limit, offset, sort)` — query: `public = true OR account_id = accountId`, same pattern as `template.service.ts`
+- `getImage(accountId, imageId)` — public accessible to all authenticated users; private only to owner
+- `uploadImage(accountId, file: Express.Multer.File, name?: string)`:
+  1. Validate MIME type against allowed list — throw `BadRequestException` if not allowed
+  2. Validate file size ≤ 10 MB — throw `BadRequestException` if exceeded
+  3. Generate S3 key: `images/{accountId}/{uuid}.{ext}` where ext derived from mimeType
+  4. Call `s3.putObject(file.buffer, file.mimetype, s3Key)` — returns `{ url }`
+  5. Create and save Image entity with `public: false`
+  6. Return saved entity
+- `deleteImage(accountId, imageId)`:
+  1. Find image, verify ownership (throw `ForbiddenException` if public or wrong owner)
+  2. `image.softRemove()` — soft delete in DB
+  3. `s3.deleteObject(image.s3Key)` — fire-and-forget (don't await, don't throw)
 
-- Snapshot version `k` always covers state at commit `(k+1) * n` for k=0, then `k * n` for k≥1.
-- Frontend can undo only back to the latest snapshot — it is the hard boundary.
-- The snapshot is always `n` commits behind the current HEAD.
-- After creating a new snapshot, backend pushes `{ snapshot, commits[] }` to the frontend over WebSocket. `commits[]` contains only the `n` commits after the new snapshot.
+**`image.controller.ts`** — endpoints:
+- `GET /images` — query params: `page[limit]` (1–100, default 20), `page[offset]` (default 0), `sort` (newest|oldest, default newest). `@UseGuards(JwtGuard)`.
+- `GET /images/:id` — `@UseGuards(JwtGuard)`, `@Param('id', ParseUUIDPipe)`.
+- `POST /images` — `@UseGuards(JwtGuard)`, `@UseInterceptors(FileInterceptor('file'))`. Body: multipart with `file` field + optional `name` field. Use `@UploadedFile()` decorator.
+- `DELETE /images/:id` — `@UseGuards(JwtGuard)`, `@HttpCode(204)`.
 
-### Commit flow (WebSocket)
+**`image.dto.ts`** — only `GetImagesQueryDto` (same shape as `GetTemplatesQueryDto`). No JSON:API body DTOs needed — upload uses multipart, delete has no body.
 
-1. Frontend sends `{ previous: number, changes: TEXT }`.
-2. Backend reads `MAX(number)` for `canva_id`, sets `next = MAX + 1`.
-3. `INSERT INTO commits ... IF NOT EXISTS` — if `[applied] = false`, retry from step 2.
-4. Backend echoes the stored commit back to frontend.
-5. If `next == 2n` or (`next > 2n` and `next % n == 0`) → compute and store new snapshot, push `{ snapshot, commits[] }` to frontend.
+**`image.response.ts`** — `imageResponse(image: Image): object` and `imagesResponse(images, total, limit, offset, sort, baseUrl)`. Include `url` field built from S3 key using `buildFileUrl(image.s3Key)` from `s3.uploader.ts`. Response shape:
+```json
+{
+  "data": {
+    "type": "image",
+    "id": "uuid",
+    "attributes": {
+      "name": "...",
+      "url": "https://bucket.s3.region.amazonaws.com/images/...",
+      "mime_type": "image/png",
+      "public": false,
+      "created_at": "..."
+    }
+  }
+}
+```
 
-### Canvas load flow
+**`image.module.ts`** — import `PassportModule`, `JwtModule`, `MulterModule.register({ limits: { fileSize: 10 * 1024 * 1024 } })`. Providers: `ImageService`, `S3Service`, `JwtAccessStrategy`.
 
-1. Read latest snapshot: `SELECT * FROM snapshots WHERE canva_id = ? LIMIT 1`.
-2. Derive `commit_number = (version + 1) * n` (or 0 for version 0).
-3. Read commits after snapshot: `SELECT * FROM commits WHERE canva_id = ? AND number > :commit_number`.
-4. Return `{ snapshot, commits[] }` to frontend.
+### Step 4 — Wire into AppModule
 
-### Frontend responsibilities
+Add `ImagesModule` to the `imports` array in `app.module.ts`.
 
-- Holds full Konva state in memory.
-- Applies commits on top of snapshot to render canvas.
-- Traverses `previous` links to build undo/redo tree.
-- Never sends full canvas state — only diffs in `changes`.
-- On WebSocket reconnect, sends current `snapshot.version` and `MAX(number)` so backend can re-sync if needed.
+### Step 5 — Install multer types if missing
+
+Check if `@types/multer` is in devDependencies. If not: `npm install --save-dev @types/multer`.
+
+### Step 6 — OpenAPI docs `docs/rest/spec/images/`
+
+Create `images.yaml` with all 4 endpoints following the same split-file pattern as `docs/rest/spec/template/`. Add `$ref` to `docs/rest/api.yaml`. Then `npm run docs:bundle`.
+
+---
+
+## Export (frontend-only, no backend work)
+
+Canvas export is 100% frontend. Document for reference:
+- **PNG**: `stage.toDataURL('image/png')` → download
+- **JPEG**: `stage.toDataURL('image/jpeg', quality)` → download
+- **WebP**: `stage.toDataURL('image/webp')` → download
+- **SVG**: `stage.toSVG()` → download as `.svg` file
+
+No backend endpoint needed. The backend's only responsibility is that S3 image URLs are publicly readable (CORS configured on S3 bucket) so Konva can draw cross-origin images onto the canvas without tainting it.
+
+**Important S3 CORS note**: if S3 bucket is not configured for CORS, `stage.toDataURL()` will throw a security error when the canvas contains images from S3. The bucket must have a CORS rule allowing `GET` from `FRONTEND_URL`.

@@ -1,0 +1,79 @@
+get:
+  tags:
+    - images
+  summary: Get an image
+  description: >
+    Returns a single image. Public images are accessible to all authenticated users;
+    private images only to their owner.
+  security:
+    - cookieAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: Image found.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/Image.yaml'
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Not the owner of a private image.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '404':
+      description: Image not found.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+delete:
+  tags:
+    - images
+  summary: Delete an image
+  description: >
+    Soft-deletes a private image and removes the file from S3.
+    Only the owner can delete their image; public images cannot be deleted.
+  security:
+    - cookieAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '204':
+      description: Image deleted.
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '403':
+      description: Not the owner or image is public.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '404':
+      description: Image not found.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'

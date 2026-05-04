@@ -1,0 +1,94 @@
+get:
+  tags:
+    - images
+  summary: List images
+  description: >
+    Returns a paginated list of all public (system preset) images plus the
+    authenticated user's own uploaded images.
+  security:
+    - cookieAuth: []
+  parameters:
+    - name: page[limit]
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: page[offset]
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    - name: sort
+      in: query
+      schema:
+        type: string
+        enum: [ newest, oldest ]
+        default: newest
+  responses:
+    '200':
+      description: List of images.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/ImagesCollection.yaml'
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+
+post:
+  tags:
+    - images
+  summary: Upload an image
+  description: >
+    Uploads an image file to S3 and creates a private image record owned by the
+    authenticated user. Supported formats: JPEG, PNG, WebP, SVG. Max size: 10 MB.
+    Pass an optional `name` query parameter to override the display name
+    (defaults to the original filename).
+  security:
+    - cookieAuth: []
+  parameters:
+    - name: name
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 255
+      description: Display name for the image (defaults to original filename)
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          type: object
+          required:
+            - file
+          properties:
+            file:
+              type: string
+              format: binary
+              description: Image file (JPEG, PNG, WebP, or SVG; max 10 MB)
+  responses:
+    '201':
+      description: Image uploaded.
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/Image.yaml'
+    '400':
+      description: Unsupported file type or file too large.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
+    '401':
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '../../shared/Errors.yaml'
